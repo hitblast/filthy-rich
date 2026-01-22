@@ -28,6 +28,10 @@ cargo run --example indefinite  # ex. 1
 cargo run --example timed  # ex. 2
 ```
 
+## API Reference
+
+docs.rs: https://docs.rs/crate/filthy-rich/latest
+
 ## Yet another library?
 
 I'm not a fan of too much unnecessary boilerplate hovering around the code I use for my primary projects,
