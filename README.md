@@ -2,7 +2,7 @@
 
 # filthy-rich
 
-Tiny Discord Rich Presence wrapper for Unix-based apps.
+Tiny Discord Rich Presence wrapper for Unix-based apps.\n
 **Only <300 LOC! Insanely tiny.**
 
 ```bash
