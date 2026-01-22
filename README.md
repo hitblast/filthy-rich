@@ -4,31 +4,35 @@ Tiny Discord Rich Presence wrapper for Unix-based apps.
 
 **Only <300 LOC! Insanely tiny.**
 
-```rust
-client.run().await?;
-client.set_activity("description", "below").await?;
+```bash
+# Add to project!
+cargo add filthy-rich
 ```
 
 ### Starter Snippets
 
-These can be found in `examples/`:
+Examples are included with the project. To get, first clone the repository:
 
-- For an indefinitely running rich presence, [see this](./examples/indefinite.rs).
-- For an timed, changing rich presence, [see this](./examples/timed.rs).
+1. For an indefinitely running rich presence, [see this](./examples/indefinite.rs).
+2. For an timed, changing rich presence, [see this](./examples/timed.rs).
 
-### Add to your project
-
-> [!NOTE]
-> This library is primarily intended for binary applications, hence I've just bubbled around the errors using the `anyhow` crate, and it should be added as a dependency to the project along with `tokio` since all I/O is redirected asynchronously.
+You can also run them to see how they work.
 
 ```bash
-cargo add filthy-rich
+# First, clone and `cd` into the repository.
+git clone https://github.com/hitblast/filthy-rich && cd filthy-rich
+
+# Run any of the examples:
+cargo run --example indefinite  # ex. 1
+cargo run --example timed  # ex. 2
 ```
 
 ### Yet another library?
 
 I'm not a fan of too much unnecessary boilerplate hovering around the code I use for my primary projects,
 so the primary goal for writing this library is to avoid Windows-specific binds.
+
+The project is also **only intended for actual binary apps**, unless you have a matching stack to go with the library itself.
 
 ### License
 
