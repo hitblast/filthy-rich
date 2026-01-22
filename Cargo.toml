@@ -1,0 +1,30 @@
+[package]
+name = "filthy-rich"
+description = "Tiny Discord Rich Presence wrapper for Unix."
+authors = ["Anindya Shiddhartha <@hitblast>"]
+version = "0.1.0"
+edition = "2024"
+license-file = "LICENSE"
+keywords = ["discord", "discord rich presence", "rich presence", "ipc", "rpc", "discord rpc"]
+categories = ["development-tools"]
+
+[lib]
+name = "filthy_rich"
+path = "src/lib.rs"
+
+[dependencies]
+anyhow = "1.0.100"
+tokio = { version = "1.49.0", features = ["full"] }
+uuid = { version = "1.19.0", features = ["v4"] }
+
+[lints.clippy]
+unwrap_used = "deny"
+expect_used = "deny"
+unreachable = "deny"
+must_use_candidate = "warn"
+
+[lints.rust]
+unused_must_use = "deny"
+
+[profile.release]
+lto = "thin"
