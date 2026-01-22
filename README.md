@@ -14,7 +14,7 @@ client.set_activity("description", "below").await?;
 These can be found in `examples/`:
 
 - For an indefinitely running rich presence, [see this](./examples/indefinite.rs).
-- For an indefinite but changing rich presence, [see this](./examples/timed.rs).
+- For an timed, changing rich presence, [see this](./examples/timed.rs).
 
 ### Add to your project
 
