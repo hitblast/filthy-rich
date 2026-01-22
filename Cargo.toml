@@ -6,7 +6,7 @@ repository = "https://github.com/hitblast/filthy-rich"
 version = "0.1.0"
 edition = "2024"
 license-file = "LICENSE"
-keywords = ["discord", "discord rich presence", "rich presence", "ipc", "rpc"]
+keywords = ["discord", "discord", "rich presence", "ipc", "rpc"]
 categories = ["development-tools"]
 
 [lib]
