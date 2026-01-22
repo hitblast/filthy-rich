@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 use std::time::Duration;
 
 use anyhow::Result;
