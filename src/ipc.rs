@@ -4,6 +4,8 @@ use uuid::Uuid;
 
 use crate::{socket::DiscordIPCSocket, utils::pack};
 
+/// Basic Discord rich presence IPC implementation.
+/// See the docs: https://docs.rs/crate/filthy-rich/latest
 pub struct DiscordIPC {
     sock: DiscordIPCSocket,
     ipc_task: Option<JoinHandle<Result<()>>>,
@@ -11,6 +13,8 @@ pub struct DiscordIPC {
 }
 
 impl DiscordIPC {
+    /// Given a client ID, create a new DiscordIPC instance.
+    /// Needs to have Discord running for successful execution.
     pub async fn new_from(client_id: &str) -> Result<Self> {
         let sock = DiscordIPCSocket::new().await?;
 
@@ -21,6 +25,8 @@ impl DiscordIPC {
         })
     }
 
+    /// Bare-bones implementation of handshake with the Discord IPC.
+    /// Use `.run()` instead.
     pub async fn handshake(&mut self) -> Result<()> {
         let json = format!(r#"{{"v":1,"client_id":"{}"}}"#, self.client_id);
         let bytes = json.as_bytes();
@@ -32,6 +38,7 @@ impl DiscordIPC {
         Ok(())
     }
 
+    /// Look out for READY in socket frames. Use `.run()` instead.
     pub async fn wait_for_ready(&mut self) -> Result<()> {
         loop {
             let frame = self.sock.read_frame().await?;
@@ -43,6 +50,8 @@ impl DiscordIPC {
         Ok(())
     }
 
+    /// Convenience function for performing handshake, waiting for READY opcode
+    /// and handling the IPC response loop.
     pub async fn run(&mut self) -> Result<()> {
         if self.ipc_task.is_some() {
             return Ok(());
@@ -57,6 +66,7 @@ impl DiscordIPC {
         Ok(())
     }
 
+    /// Waits for response from IPC task; can be used to run the client indefinitely.
     pub async fn wait(&mut self) -> Result<()> {
         if let Some(handle) = &mut self.ipc_task {
             match handle.await {
@@ -68,6 +78,7 @@ impl DiscordIPC {
         Ok(())
     }
 
+    /// Sets a tiny Discord rich presence activity.
     pub async fn set_activity(&mut self, top: &str, bottom: &str) -> Result<()> {
         let pid = std::process::id();
         let uuid = Uuid::new_v4();

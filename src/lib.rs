@@ -1,9 +1,11 @@
 #[cfg(unix)]
 pub mod ipc;
 #[cfg(unix)]
-pub mod socket;
+pub use ipc::DiscordIPC;
 #[cfg(unix)]
-pub mod utils;
+mod socket;
+#[cfg(unix)]
+mod utils;
 
 #[cfg(not(unix))]
 compile_error!("This crate only supports Unix targets!");
