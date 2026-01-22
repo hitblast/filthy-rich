@@ -1,6 +1,6 @@
 [package]
 name = "filthy-rich"
-description = "Tiny Discord Rich Presence wrapper for Unix."
+description = "Tiny Discord Rich Presence wrapper for Unix-based apps."
 authors = ["Anindya Shiddhartha <@hitblast>"]
 version = "0.1.0"
 edition = "2024"
