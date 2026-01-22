@@ -1,13 +1,16 @@
+<img src="./assets/art.png" width="200px" align="right">
+
 ## filthy-rich
 
 Tiny Discord Rich Presence wrapper for Unix-based apps.
-
 **Only <300 LOC! Insanely tiny.**
 
 ```bash
 # Add to project!
 cargo add filthy-rich
 ```
+
+---
 
 ### Starter Snippets
 
