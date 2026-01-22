@@ -2,10 +2,11 @@
 name = "filthy-rich"
 description = "Tiny Discord Rich Presence wrapper for Unix-based apps."
 authors = ["Anindya Shiddhartha <@hitblast>"]
+repository = "https://github.com/hitblast/filthy-rich"
 version = "0.1.0"
 edition = "2024"
 license-file = "LICENSE"
-keywords = ["discord", "discord rich presence", "rich presence", "ipc", "rpc", "discord rpc"]
+keywords = ["discord", "discord rich presence", "rich presence", "ipc", "rpc"]
 categories = ["development-tools"]
 
 [lib]
