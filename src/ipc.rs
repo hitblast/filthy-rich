@@ -7,7 +7,7 @@ use uuid::Uuid;
 use crate::{socket::DiscordIPCSocket, utils::pack};
 
 /// Basic Discord rich presence IPC implementation.
-/// See the docs: https://docs.rs/crate/filthy-rich/latest
+/// See the docs: <https://docs.rs/crate/filthy-rich/latest>
 pub struct DiscordIPC {
     sock: DiscordIPCSocket,
     ipc_task: Option<JoinHandle<Result<()>>>,
