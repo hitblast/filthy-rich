@@ -15,6 +15,16 @@ pub struct DiscordIPC {
 }
 
 impl DiscordIPC {
+    async fn send_json(&mut self, json: String, opcode: u32) -> Result<()> {
+        let bytes = json.as_bytes();
+
+        let packed = pack(opcode, bytes.len() as u32)?;
+        self.sock.write(&packed).await?;
+        self.sock.write(bytes).await?;
+
+        Ok(())
+    }
+
     /// Given a client ID, create a new DiscordIPC instance.
     /// Needs to have Discord running for successful execution.
     pub async fn new_from(client_id: &str) -> Result<Self> {
@@ -31,11 +41,7 @@ impl DiscordIPC {
     /// Use `.run()` instead.
     pub async fn handshake(&mut self) -> Result<()> {
         let json = format!(r#"{{"v":1,"client_id":"{}"}}"#, self.client_id);
-        let bytes = json.as_bytes();
-
-        let pack = pack(0u32, bytes.len() as u32)?;
-        self.sock.write(&pack).await?;
-        self.sock.write(bytes).await?;
+        self.send_json(json, 0u32).await?;
 
         Ok(())
     }
@@ -81,7 +87,7 @@ impl DiscordIPC {
     }
 
     /// Sets a tiny Discord rich presence activity.
-    pub async fn set_activity(&mut self, top: &str, bottom: &str) -> Result<()> {
+    pub async fn set_activity(&mut self, details: &str, state: &str) -> Result<()> {
         let pid = std::process::id();
         let uuid = Uuid::new_v4();
 
@@ -93,20 +99,16 @@ impl DiscordIPC {
         "pid": {},
         "activity": {{
             "details":"{}",
-            "state":"{}"
+            "state":"{}",
         }}
     }},
     "nonce":"{}"
 }}
 "#,
-            pid, top, bottom, uuid
+            pid, details, state, uuid
         );
 
-        let bytes = json.as_bytes();
-        let pack = pack(1u32, bytes.len() as u32)?;
-
-        self.sock.write(&pack).await?;
-        self.sock.write(bytes).await?;
+        self.send_json(json, 1u32).await?;
         Ok(())
     }
 }
