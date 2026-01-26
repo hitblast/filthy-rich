@@ -1,4 +1,4 @@
-<img src="./assets/art.png" width="200px" align="right">
+<img src="./assets/art.png" width="150px" align="right">
 
 # filthy-rich
 
