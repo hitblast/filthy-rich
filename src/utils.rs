@@ -5,6 +5,7 @@ use std::{
     collections::HashSet,
     env::var,
     path::{Path, PathBuf},
+    time::{SystemTime, UNIX_EPOCH},
 };
 
 #[must_use]
@@ -34,6 +35,11 @@ pub(crate) fn get_pipe_path() -> Option<PathBuf> {
     }
 
     None
+}
+
+pub(crate) fn get_current_timestamp_unix() -> Result<u64> {
+    let ts = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
+    Ok(ts)
 }
 
 pub(crate) fn pack(opcode: u32, data_len: u32) -> Result<Vec<u8>> {

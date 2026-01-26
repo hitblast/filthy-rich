@@ -39,6 +39,12 @@ so the primary goal for writing this library is to avoid Windows-specific binds.
 
 The project is also **only intended for actual binary apps**, unless you have a matching stack to go with the library itself.
 
+## TODO
+
+- [x] Timestamp-preserving code.
+- [ ] Global `Activity` struct for a well-defined Rich Presence schema.
+- [ ] More functions!
+
 ## License
 
 Licensed under [MIT](./LICENSE).

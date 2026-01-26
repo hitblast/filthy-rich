@@ -4,13 +4,17 @@ use anyhow::Result;
 use tokio::task::JoinHandle;
 use uuid::Uuid;
 
-use crate::{socket::DiscordIPCSocket, utils::pack};
+use crate::{
+    socket::DiscordIPCSocket,
+    utils::{get_current_timestamp_unix, pack},
+};
 
 /// Basic Discord rich presence IPC implementation.
 /// See the docs: <https://docs.rs/crate/filthy-rich/latest>
 pub struct DiscordIPC {
     sock: DiscordIPCSocket,
     ipc_task: Option<JoinHandle<Result<()>>>,
+    timestamp: u64,
     client_id: String,
 }
 
@@ -33,6 +37,7 @@ impl DiscordIPC {
         Ok(Self {
             sock,
             ipc_task: None,
+            timestamp: get_current_timestamp_unix()?,
             client_id: client_id.to_string(),
         })
     }
@@ -100,12 +105,15 @@ impl DiscordIPC {
         "activity": {{
             "details":"{}",
             "state":"{}",
+            "timestamps": {{
+                "start": {}
+            }}
         }}
     }},
     "nonce":"{}"
 }}
 "#,
-            pid, details, state, uuid
+            pid, details, state, self.timestamp, uuid
         );
 
         self.send_json(json, 1u32).await?;
