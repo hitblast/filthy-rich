@@ -7,7 +7,7 @@ use tokio::time::sleep;
 
 #[tokio::main]
 async fn main() {
-    let mut client = DiscordIPC::new_from("1463450870480900160").await.unwrap();
+    let mut client = DiscordIPC::new("1463450870480900160").await.unwrap();
 
     client.run().await.unwrap();
 

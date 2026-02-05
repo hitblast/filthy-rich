@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: MIT
 
 use anyhow::Result;
-use tokio::task::JoinHandle;
+use tokio::{
+    runtime::{Builder, Runtime},
+    task::JoinHandle,
+};
 use uuid::Uuid;
 
 use crate::{
@@ -9,8 +12,40 @@ use crate::{
     utils::{get_current_timestamp_unix, pack},
 };
 
+/// Blocking representation of DiscordIPC.
+pub struct DiscordIPCSync {
+    inner: DiscordIPC,
+    rt: Runtime,
+}
+
+impl DiscordIPCSync {
+    /// Given a client ID, create a new `DiscordIPCSync` instance.
+    /// Needs to have Discord running for successful execution.
+    ///
+    /// NOTE: Essentially a `DiscordIPC` instance but with blocking I/O.
+    pub fn new(client_id: &str) -> Result<Self> {
+        let rt = Builder::new_multi_thread().enable_all().build()?;
+        let inner = rt.block_on(DiscordIPC::new(client_id))?;
+        Ok(Self { inner, rt })
+    }
+
+    /// Blocking iteration of `DiscordIPC::run`
+    pub fn run(&mut self) -> Result<()> {
+        self.rt.block_on(self.inner.run())
+    }
+
+    /// Blocking iteration of `DiscordIPC::set_activity`
+    pub fn set_activity(&mut self, details: &str, state: &str) -> Result<()> {
+        self.rt.block_on(self.inner.set_activity(details, state))
+    }
+
+    /// Blocking iteration of `DiscordIPC::wait`
+    pub fn wait(&mut self) -> Result<()> {
+        self.rt.block_on(self.inner.wait())
+    }
+}
+
 /// Basic Discord rich presence IPC implementation.
-/// See the docs: <https://docs.rs/crate/filthy-rich/latest>
 pub struct DiscordIPC {
     sock: DiscordIPCSocket,
     ipc_task: Option<JoinHandle<Result<()>>>,
@@ -29,9 +64,9 @@ impl DiscordIPC {
         Ok(())
     }
 
-    /// Given a client ID, create a new DiscordIPC instance.
+    /// Given a client ID, create a new `DiscordIPC` instance.
     /// Needs to have Discord running for successful execution.
-    pub async fn new_from(client_id: &str) -> Result<Self> {
+    pub async fn new(client_id: &str) -> Result<Self> {
         let sock = DiscordIPCSocket::new().await?;
 
         Ok(Self {
@@ -42,17 +77,14 @@ impl DiscordIPC {
         })
     }
 
-    /// Bare-bones implementation of handshake with the Discord IPC.
-    /// Use `.run()` instead.
-    pub async fn handshake(&mut self) -> Result<()> {
+    async fn handshake(&mut self) -> Result<()> {
         let json = format!(r#"{{"v":1,"client_id":"{}"}}"#, self.client_id);
         self.send_json(json, 0u32).await?;
 
         Ok(())
     }
 
-    /// Look out for READY in socket frames. Use `.run()` instead.
-    pub async fn wait_for_ready(&mut self) -> Result<()> {
+    async fn wait_for_ready(&mut self) -> Result<()> {
         loop {
             let frame = self.sock.read_frame().await?;
 
@@ -63,8 +95,8 @@ impl DiscordIPC {
         Ok(())
     }
 
-    /// Convenience function for performing handshake, waiting for READY opcode
-    /// and handling the IPC response loop.
+    /// Starts off the connection with Discord. This includes performing a handshake, waiting for READY and
+    /// starting the IPC response loop.
     pub async fn run(&mut self) -> Result<()> {
         if self.ipc_task.is_some() {
             return Ok(());
