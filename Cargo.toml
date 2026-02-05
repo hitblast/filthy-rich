@@ -4,7 +4,7 @@ description = "Tiny Discord Rich Presence wrapper for Unix-based apps."
 authors = ["Anindya Shiddhartha <@hitblast>"]
 repository = "https://github.com/hitblast/filthy-rich"
 version = "0.1.4"
-edition = "2024"
+edition = "2021"
 license-file = "LICENSE"
 keywords = ["discord", "discord", "rich-presence", "ipc", "rpc"]
 categories = ["development-tools"]
@@ -15,7 +15,7 @@ path = "src/lib.rs"
 
 [dependencies]
 anyhow = "1.0.100"
-uuid = { version = "1.19.0", features = ["v4"] }
+uuid = { version = "1.20.0", features = ["v4"] }
 
 [lints.clippy]
 unwrap_used = "deny"
