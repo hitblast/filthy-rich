@@ -8,6 +8,7 @@ edition = "2021"
 license-file = "LICENSE"
 keywords = ["discord", "discord", "rich-presence", "ipc", "rpc"]
 categories = ["development-tools"]
+rust-version = "1.82.0"
 
 [lib]
 name = "filthy_rich"
