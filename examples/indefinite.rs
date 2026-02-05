@@ -2,10 +2,11 @@
 
 use filthy_rich::ipc::DiscordIPC;
 
-fn main() {
-    let mut client = DiscordIPC::new_from("1463450870480900160").unwrap();
+#[tokio::main]
+async fn main() {
+    let mut client = DiscordIPC::new_from("1463450870480900160").await.unwrap();
 
-    client.run().unwrap();
-    client.set_activity("this runs", "forever").unwrap();
-    client.wait().unwrap();
+    client.run().await.unwrap();
+    client.set_activity("this runs", "forever").await.unwrap();
+    client.wait().await.unwrap();
 }

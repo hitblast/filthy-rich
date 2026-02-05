@@ -1,6 +1,6 @@
 [package]
 name = "filthy-rich"
-description = "Tiny Discord Rich Presence wrapper for Unix-based apps."
+description = "Tiny Discord Rich Presence wrapper library for apps."
 authors = ["Anindya Shiddhartha <@hitblast>"]
 repository = "https://github.com/hitblast/filthy-rich"
 version = "0.1.5"
@@ -16,6 +16,7 @@ path = "src/lib.rs"
 
 [dependencies]
 anyhow = "1.0.100"
+tokio = { version = "1.49.0", features = ["full"] }
 uuid = { version = "1.20.0", features = ["v4"] }
 
 [lints.clippy]
