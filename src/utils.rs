@@ -12,6 +12,9 @@ use std::{
 pub(crate) fn get_pipe_path() -> Option<PathBuf> {
     let mut candidates = HashSet::new();
 
+    #[cfg(target_os = "windows")]
+    possible_paths.insert(r"\\?\pipe\discord-ipc-".to_string());
+
     #[cfg(target_family = "unix")]
     candidates.insert("/tmp/discord-ipc-".to_string());
 
@@ -37,7 +40,7 @@ pub(crate) fn get_pipe_path() -> Option<PathBuf> {
     None
 }
 
-pub(crate) fn get_current_timestamp_unix() -> Result<u64> {
+pub(crate) fn get_current_timestamp() -> Result<u64> {
     let ts = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
     Ok(ts)
 }

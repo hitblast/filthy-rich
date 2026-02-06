@@ -9,7 +9,7 @@ use uuid::Uuid;
 
 use crate::{
     socket::DiscordIPCSocket,
-    utils::{get_current_timestamp_unix, pack},
+    utils::{get_current_timestamp, pack},
 };
 
 /// Blocking representation of DiscordIPC.
@@ -72,7 +72,7 @@ impl DiscordIPC {
         Ok(Self {
             sock,
             ipc_task: None,
-            timestamp: get_current_timestamp_unix()?,
+            timestamp: get_current_timestamp()?,
             client_id: client_id.to_string(),
         })
     }

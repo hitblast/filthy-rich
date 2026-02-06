@@ -1,16 +1,36 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::{Context, Result, bail};
+use anyhow::{Result, bail};
 use std::sync::Arc;
 
+#[cfg(target_os = "windows")]
+use tokio::net::unix::{ReadHalf, WriteHalf};
+
+#[cfg(target_family = "unix")]
+use tokio::net::unix::{OwnedReadHalf, OwnedWriteHalf};
+
+#[cfg(target_family = "unix")]
+use tokio::net::UnixStream;
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
-    net::{
-        UnixStream,
-        unix::{OwnedReadHalf, OwnedWriteHalf},
-    },
     sync::Mutex,
 };
+
+#[cfg(target_family = "windows")]
+use tokio::{
+    io::{ReadHalf, WriteHalf},
+    net::windows::named_pipe::{ClientOptions, NamedPipeClient},
+};
+
+#[cfg(target_family = "windows")]
+type ReadHalfCore = ReadHalf<NamedPipeClient>;
+#[cfg(target_family = "windows")]
+type WriteHalfCore = WriteHalf<NamedPipeClient>;
+
+#[cfg(target_family = "unix")]
+type ReadHalfCore = OwnedReadHalf;
+#[cfg(target_family = "unix")]
+type WriteHalfCore = OwnedWriteHalf;
 
 use crate::utils::{get_pipe_path, pack};
 
@@ -27,30 +47,51 @@ macro_rules! acquire {
 
 #[derive(Clone)]
 pub(crate) struct DiscordIPCSocket {
-    readhalf: Arc<Mutex<OwnedReadHalf>>,
-    writehalf: Arc<Mutex<OwnedWriteHalf>>,
+    readhalf: Arc<Mutex<ReadHalfCore>>,
+    writehalf: Arc<Mutex<WriteHalfCore>>,
 }
 
 impl DiscordIPCSocket {
+    #[cfg(target_os = "windows")]
+    async fn get_socket() -> Result<(ReadHalfCore, WriteHalfCore)> {
+        let path = match get_pipe_path() {
+            Some(p) => p,
+            None => return bail!("Pipe not found."),
+        };
+        if let Ok(client) = ClientOptions::new().open(&path) {
+            let (read_half, write_half) = tokio::io::split(client);
+            return Ok((read_half, write_half));
+        }
+
+        bail!("Could not connect to pipe.")
+    }
+
+    #[cfg(target_family = "unix")]
+    async fn get_socket() -> Result<(ReadHalfCore, WriteHalfCore)> {
+        let path = match get_pipe_path() {
+            Some(p) => p,
+            None => bail!("Pipe not found."),
+        };
+
+        if let Ok(socket) = UnixStream::connect(&path).await {
+            return Ok(socket.into_split());
+        }
+
+        bail!("Could not connect to pipe.")
+    }
+
     pub(crate) async fn new() -> Result<Self> {
-        let path = get_pipe_path();
+        let result = Self::get_socket().await;
 
-        if let Some(path) = path {
-            let result = UnixStream::connect(&path)
-                .await
-                .context("Failed to connect to socket; is your app open?");
-
-            if let Ok(stream) = result {
-                let (readhalf, writehalf) = stream.into_split();
-
+        match result {
+            Ok((readhalf, writehalf)) => {
                 return Ok(Self {
                     readhalf: Arc::new(Mutex::new(readhalf)),
                     writehalf: Arc::new(Mutex::new(writehalf)),
                 });
             }
+            Err(e) => bail!("Error while creating new IPC client: {e}"),
         }
-
-        bail!("Socket path doesn't exist, retreating from the losses.")
     }
 
     pub(crate) async fn read(&mut self, buffer: &mut [u8]) -> Result<()> {
