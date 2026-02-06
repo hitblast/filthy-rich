@@ -1,5 +1,3 @@
-// SPDX-License-Identifier: MIT
-
 use std::{thread::sleep, time::Duration};
 
 use filthy_rich::ipc::DiscordIPCSync;

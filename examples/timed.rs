@@ -1,5 +1,3 @@
-// SPDX-License-Identifier: MIT
-
 use std::time::Duration;
 
 use filthy_rich::ipc::DiscordIPC;

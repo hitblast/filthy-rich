@@ -1,5 +1,3 @@
-// SPDX-License-Identifier: MIT
-
 use filthy_rich::ipc::DiscordIPCSync;
 
 fn main() {
