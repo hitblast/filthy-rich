@@ -3,9 +3,6 @@
 use anyhow::{Result, bail};
 use std::sync::Arc;
 
-#[cfg(target_os = "windows")]
-use tokio::net::unix::{ReadHalf, WriteHalf};
-
 #[cfg(target_family = "unix")]
 use tokio::net::unix::{OwnedReadHalf, OwnedWriteHalf};
 
