@@ -5,6 +5,8 @@
 Tiny Discord Rich Presence wrapper library for apps.<br>
 **Only <400 LOC! Insanely tiny.**
 
+Requires **Rust 1.82.0 or later.**
+
 ```bash
 # Add to project!
 cargo add filthy-rich
