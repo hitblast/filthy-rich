@@ -3,7 +3,7 @@
 # filthy-rich
 
 Tiny Discord Rich Presence wrapper library for apps.<br>
-**Only <300 LOC! Insanely tiny.**
+**Only <400 LOC! Insanely tiny.**
 
 ```bash
 # Add to project!
@@ -41,7 +41,7 @@ The project is also **only intended for actual binary apps**, unless you have a 
 
 ## TODO
 
-- [ ] **(New)** Windows support
+- [x] **(New)** Windows support
 - [x] Timestamp-preserving code
 - [ ] Global `Activity` struct for a well-defined Rich Presence schema
 
