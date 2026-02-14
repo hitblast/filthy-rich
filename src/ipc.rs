@@ -46,6 +46,7 @@ impl DiscordIPCSync {
 }
 
 /// Basic Discord rich presence IPC implementation.
+#[derive(Debug)]
 pub struct DiscordIPC {
     sock: DiscordIPCSocket,
     ipc_task: Option<JoinHandle<Result<()>>>,

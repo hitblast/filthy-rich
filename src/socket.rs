@@ -42,7 +42,7 @@ macro_rules! acquire {
     };
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub(crate) struct DiscordIPCSocket {
     readhalf: Arc<Mutex<ReadHalfCore>>,
     writehalf: Arc<Mutex<WriteHalfCore>>,
