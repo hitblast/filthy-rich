@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Result;
+use anyhow::{Result, bail};
 use tokio::{
     runtime::{Builder, Runtime},
     task::JoinHandle,
@@ -16,6 +16,7 @@ use crate::{
 pub struct DiscordIPCSync {
     inner: DiscordIPC,
     rt: Runtime,
+    ipc_task: Option<JoinHandle<Result<()>>>,
 }
 
 impl DiscordIPCSync {
@@ -26,30 +27,43 @@ impl DiscordIPCSync {
     pub fn new(client_id: &str) -> Result<Self> {
         let rt = Builder::new_multi_thread().enable_all().build()?;
         let inner = rt.block_on(DiscordIPC::new(client_id))?;
-        Ok(Self { inner, rt })
+        Ok(Self {
+            inner,
+            rt,
+            ipc_task: None,
+        })
     }
 
     /// Blocking iteration of `DiscordIPC::run`
     pub fn run(&mut self) -> Result<()> {
-        self.rt.block_on(self.inner.run())
+        if self.ipc_task.is_some() {
+            bail!(".run() called multiple times over DiscordIPC.")
+        }
+
+        let handle = self.rt.block_on(self.inner.run())?;
+        self.ipc_task = Some(handle);
+
+        Ok(())
+    }
+
+    /// Convenience function for indefinitely running the Discord IPC message receiver loop; must use *after* `DiscordIPCSync::run`.
+    pub fn wait(&mut self) -> Result<()> {
+        if let Some(handle) = self.ipc_task.take() {
+            self.rt.block_on(handle)??;
+        }
+        Ok(())
     }
 
     /// Blocking iteration of `DiscordIPC::set_activity`
     pub fn set_activity(&mut self, details: &str, state: &str) -> Result<()> {
         self.rt.block_on(self.inner.set_activity(details, state))
     }
-
-    /// Blocking iteration of `DiscordIPC::wait`
-    pub fn wait(&mut self) -> Result<()> {
-        self.rt.block_on(self.inner.wait())
-    }
 }
 
 /// Basic Discord rich presence IPC implementation.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct DiscordIPC {
     sock: DiscordIPCSocket,
-    ipc_task: Option<JoinHandle<Result<()>>>,
     timestamp: u64,
     client_id: String,
 }
@@ -72,7 +86,6 @@ impl DiscordIPC {
 
         Ok(Self {
             sock,
-            ipc_task: None,
             timestamp: get_current_timestamp()?,
             client_id: client_id.to_string(),
         })
@@ -98,30 +111,14 @@ impl DiscordIPC {
 
     /// Starts off the connection with Discord. This includes performing a handshake, waiting for READY and
     /// starting the IPC response loop.
-    pub async fn run(&mut self) -> Result<()> {
-        if self.ipc_task.is_some() {
-            return Ok(());
-        }
-
+    pub async fn run(&mut self) -> Result<JoinHandle<Result<()>>> {
         self.handshake().await?;
         self.wait_for_ready().await?;
 
         let mut sock = self.sock.clone();
-        self.ipc_task = Some(tokio::spawn(async move { sock.handle_ipc().await }));
+        let handle = tokio::spawn(async move { sock.handle_ipc().await });
 
-        Ok(())
-    }
-
-    /// Waits for response from IPC task; can be used to run the client indefinitely.
-    pub async fn wait(&mut self) -> Result<()> {
-        if let Some(handle) = &mut self.ipc_task {
-            match handle.await {
-                Ok(res) => res?,
-                Err(e) if e.is_cancelled() => {}
-                Err(e) => return Err(e.into()),
-            }
-        }
-        Ok(())
+        Ok(handle)
     }
 
     /// Sets a tiny Discord rich presence activity.

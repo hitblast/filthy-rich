@@ -1,10 +1,14 @@
+use anyhow::Result;
 use filthy_rich::ipc::DiscordIPC;
 
 #[tokio::main]
-async fn main() {
-    let mut client = DiscordIPC::new("1463450870480900160").await.unwrap();
+async fn main() -> Result<()> {
+    let mut client = DiscordIPC::new("1463450870480900160").await?;
 
-    client.run().await.unwrap();
-    client.set_activity("this runs", "forever").await.unwrap();
-    client.wait().await.unwrap();
+    let handle = client.run().await?; // spawns IPC loop
+    client.set_activity("this runs", "forever").await?; // set activity
+
+    handle.await??; // wait indefinitely, propagate errors
+
+    Ok(())
 }
