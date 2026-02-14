@@ -13,6 +13,7 @@ use crate::{
 };
 
 /// Blocking representation of DiscordIPC.
+#[derive(Debug)]
 pub struct DiscordIPCSync {
     inner: DiscordIPC,
     rt: Runtime,
