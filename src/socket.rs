@@ -29,7 +29,7 @@ type ReadHalfCore = OwnedReadHalf;
 #[cfg(target_family = "unix")]
 type WriteHalfCore = OwnedWriteHalf;
 
-use crate::utils::{get_pipe_path, pack};
+use crate::utils::get_pipe_path;
 
 pub(crate) struct Frame {
     pub opcode: u32,
@@ -42,7 +42,7 @@ macro_rules! acquire {
     };
 }
 
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub(crate) struct DiscordIPCSocket {
     readhalf: Arc<Mutex<ReadHalfCore>>,
     writehalf: Arc<Mutex<WriteHalfCore>>,
@@ -114,22 +114,5 @@ impl DiscordIPCSocket {
         self.read(&mut body).await?;
 
         Ok(Frame { opcode, body })
-    }
-
-    pub(crate) async fn handle_ipc(&mut self) -> anyhow::Result<()> {
-        loop {
-            let frame = self.read_frame().await?;
-            match frame.opcode {
-                3 => {
-                    let pack = pack(frame.opcode, frame.body.len() as u32)?;
-                    self.write(&pack).await?;
-                    self.write(&frame.body).await?;
-                }
-                2 => break,
-                _ => {} // essentially denoting that the client's working
-            }
-        }
-
-        Ok(())
     }
 }

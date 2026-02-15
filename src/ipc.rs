@@ -1,9 +1,13 @@
 // SPDX-License-Identifier: MIT
 
+use std::{sync::Arc, time::Duration};
+
 use anyhow::{Result, bail};
 use tokio::{
     runtime::{Builder, Runtime},
+    sync::Mutex,
     task::JoinHandle,
+    time::sleep,
 };
 use uuid::Uuid;
 
@@ -64,18 +68,21 @@ impl DiscordIPCSync {
 /// Basic Discord rich presence IPC implementation.
 #[derive(Debug, Clone)]
 pub struct DiscordIPC {
-    sock: DiscordIPCSocket,
+    sock: Arc<Mutex<Option<DiscordIPCSocket>>>,
     timestamp: u64,
     client_id: String,
 }
 
 impl DiscordIPC {
-    async fn send_json(&mut self, json: String, opcode: u32) -> Result<()> {
+    async fn send_json(&self, json: String, opcode: u32) -> Result<()> {
         let bytes = json.as_bytes();
+        let mut sock_guard = self.sock.lock().await;
 
-        let packed = pack(opcode, bytes.len() as u32)?;
-        self.sock.write(&packed).await?;
-        self.sock.write(bytes).await?;
+        if let Some(sock) = sock_guard.as_mut() {
+            let packed = pack(opcode, bytes.len() as u32)?;
+            sock.write(&packed).await?;
+            sock.write(bytes).await?;
+        }
 
         Ok(())
     }
@@ -83,13 +90,16 @@ impl DiscordIPC {
     /// Given a client ID, create a new `DiscordIPC` instance.
     /// Needs to have Discord running for successful execution.
     pub async fn new(client_id: &str) -> Result<Self> {
-        let sock = DiscordIPCSocket::new().await?;
-
         Ok(Self {
-            sock,
+            sock: Arc::new(Mutex::new(None)),
             timestamp: get_current_timestamp()?,
             client_id: client_id.to_string(),
         })
+    }
+
+    async fn connect(&mut self) -> Result<()> {
+        self.sock = Arc::new(Mutex::new(Some(DiscordIPCSocket::new().await?)));
+        Ok(())
     }
 
     async fn handshake(&mut self) -> Result<()> {
@@ -100,11 +110,15 @@ impl DiscordIPC {
     }
 
     async fn wait_for_ready(&mut self) -> Result<()> {
-        loop {
-            let frame = self.sock.read_frame().await?;
+        let mut sock_guard = self.sock.lock().await;
 
-            if frame.opcode == 1 && frame.body.windows(5).any(|w| w == b"READY") {
-                break;
+        loop {
+            if let Some(sock) = sock_guard.as_mut() {
+                let frame = sock.read_frame().await?;
+
+                if frame.opcode == 1 && frame.body.windows(5).any(|w| w == b"READY") {
+                    break;
+                }
             }
         }
         Ok(())
@@ -113,12 +127,50 @@ impl DiscordIPC {
     /// Starts off the connection with Discord. This includes performing a handshake, waiting for READY and
     /// starting the IPC response loop.
     pub async fn run(&mut self) -> Result<JoinHandle<Result<()>>> {
-        self.handshake().await?;
-        self.wait_for_ready().await?;
+        let mut this = self.clone();
 
-        let mut sock = self.sock.clone();
-        let handle = tokio::spawn(async move { sock.handle_ipc().await });
+        let handle = tokio::spawn(async move {
+            let mut backoff = 1;
+            loop {
+                if let Err(_) = this.connect().await {
+                    sleep(Duration::from_secs(backoff)).await;
+                    continue;
+                }
+                if let Err(_) = this.handshake().await {
+                    sleep(Duration::from_secs(backoff)).await;
+                    continue;
+                }
+                if let Err(_) = this.wait_for_ready().await {
+                    sleep(Duration::from_secs(backoff)).await;
+                    continue;
+                }
+                loop {
+                    let mut sock_guard = this.sock.lock().await;
+                    if let Some(s) = sock_guard.as_mut() {
+                        let frame = match s.read_frame().await {
+                            Ok(f) => f,
+                            Err(_) => break,
+                        };
+                        match frame.opcode {
+                            3 => {
+                                let pack = pack(frame.opcode, frame.body.len() as u32)?;
+                                s.write(&pack).await?;
+                                s.write(&frame.body).await?;
+                            }
+                            2 => {
+                                break;
+                            }
+                            _ => {}
+                        }
+                    }
+                }
 
+                this.sock = Arc::new(Mutex::new(None));
+
+                sleep(Duration::from_secs(backoff)).await;
+                backoff = (backoff * 2).min(4);
+            }
+        });
         Ok(handle)
     }
 
