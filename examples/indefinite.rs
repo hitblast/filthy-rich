@@ -1,5 +1,5 @@
 use anyhow::Result;
-use filthy_rich::ipc::DiscordIPC;
+use filthy_rich::DiscordIPC;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -8,7 +8,6 @@ async fn main() -> Result<()> {
     let handle = client.run().await?; // spawns IPC loop
     client.set_activity("this runs", "forever").await?; // set activity
 
-    handle.await??; // wait indefinitely, propagate errors
-
+    handle.await??;
     Ok(())
 }

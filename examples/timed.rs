@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use filthy_rich::ipc::DiscordIPC;
+use filthy_rich::DiscordIPC;
 use tokio::time::sleep;
 
 #[tokio::main]

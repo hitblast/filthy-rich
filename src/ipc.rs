@@ -1,6 +1,12 @@
 // SPDX-License-Identifier: MIT
 
-use std::time::Duration;
+use std::{
+    sync::{
+        Arc,
+        atomic::{AtomicBool, Ordering},
+    },
+    time::{Duration, SystemTime, UNIX_EPOCH},
+};
 
 use anyhow::{Result, bail};
 use tokio::{
@@ -11,10 +17,7 @@ use tokio::{
 };
 use uuid::Uuid;
 
-use crate::{
-    socket::DiscordIPCSocket,
-    utils::{get_current_timestamp, pack},
-};
+use crate::socket::DiscordIPCSocket;
 
 /// Commands sent to the IPC task.
 #[derive(Debug)]
@@ -27,7 +30,23 @@ enum IPCCommand {
 pub struct DiscordIPC {
     tx: mpsc::Sender<IPCCommand>,
     client_id: String,
-    timestamp: u64,
+    start_timestamp: u64,
+    running: Arc<AtomicBool>,
+}
+
+fn get_current_timestamp() -> Result<u64> {
+    let ts = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
+    Ok(ts)
+}
+
+fn pack(opcode: u32, data_len: u32) -> Result<Vec<u8>> {
+    let mut bytes = Vec::new();
+
+    for byte_array in &[opcode.to_le_bytes(), data_len.to_le_bytes()] {
+        bytes.extend_from_slice(byte_array);
+    }
+
+    Ok(bytes)
 }
 
 impl DiscordIPC {
@@ -39,17 +58,22 @@ impl DiscordIPC {
         Ok(Self {
             tx,
             client_id: client_id.to_string(),
-            timestamp: get_current_timestamp()?,
+            start_timestamp: get_current_timestamp()?,
+            running: Arc::new(AtomicBool::new(false)),
         })
     }
 
     /// Connect, handshake, wait for READY and  start the IPC client.
     pub async fn run(&mut self) -> Result<JoinHandle<Result<()>>> {
+        if self.running.swap(true, Ordering::SeqCst) {
+            bail!("Cannot run mulitple instances of .run() for DiscordIPC.")
+        }
+
         let (tx, mut rx) = mpsc::channel::<IPCCommand>(32);
         self.tx = tx;
 
         let client_id = self.client_id.clone();
-        let timestamp = self.timestamp;
+        let timestamp = self.start_timestamp;
 
         let handle = tokio::spawn(async move {
             let mut backoff = 1;

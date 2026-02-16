@@ -1,6 +1,6 @@
 use std::{thread::sleep, time::Duration};
 
-use filthy_rich::ipc::DiscordIPCSync;
+use filthy_rich::DiscordIPCSync;
 
 fn main() {
     let mut client = DiscordIPCSync::new("1463450870480900160").unwrap();

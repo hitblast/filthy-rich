@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: MIT
 
 use anyhow::{Result, bail};
+use std::collections::HashSet;
+use std::env::var;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 #[cfg(target_family = "unix")]
@@ -29,8 +32,6 @@ type ReadHalfCore = OwnedReadHalf;
 #[cfg(target_family = "unix")]
 type WriteHalfCore = OwnedWriteHalf;
 
-use crate::utils::get_pipe_path;
-
 pub(crate) struct Frame {
     pub opcode: u32,
     pub body: Vec<u8>,
@@ -40,6 +41,37 @@ macro_rules! acquire {
     ($s:expr, $x:ident) => {
         let mut $x = $s.lock().await;
     };
+}
+
+fn get_pipe_path() -> Option<PathBuf> {
+    let mut candidates = HashSet::new();
+
+    #[cfg(target_os = "windows")]
+    candidates.insert(r"\\?\pipe\discord-ipc-".to_string());
+
+    #[cfg(target_family = "unix")]
+    candidates.insert("/tmp/discord-ipc-".to_string());
+
+    if let Ok(runtime_dir) = var("TMPDIR") {
+        candidates.insert(runtime_dir + "/discord-ipc-");
+    }
+
+    if let Ok(runtime_dir) = var("XDG_RUNTIME_DIR") {
+        candidates.insert(runtime_dir.clone() + "/app/com.discordapp.Discord/discord-ipc-");
+        candidates.insert(runtime_dir + "/discord-ipc-");
+    }
+
+    for i in 0..10 {
+        for p in &candidates {
+            let path: String = format!("{}{}", p, i);
+
+            if Path::new(&path).exists() {
+                return Some(Path::new(&path).to_path_buf());
+            }
+        }
+    }
+
+    None
 }
 
 #[derive(Debug)]
