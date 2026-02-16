@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 
-use std::{sync::Arc, time::Duration};
+use std::time::Duration;
 
 use anyhow::{Result, bail};
 use tokio::{
     runtime::{Builder, Runtime},
-    sync::Mutex,
+    sync::mpsc,
     task::JoinHandle,
     time::sleep,
 };
@@ -16,172 +16,154 @@ use crate::{
     utils::{get_current_timestamp, pack},
 };
 
-/// Blocking representation of DiscordIPC.
+/// Commands sent to the IPC task.
 #[derive(Debug)]
-pub struct DiscordIPCSync {
-    inner: DiscordIPC,
-    rt: Runtime,
-    ipc_task: Option<JoinHandle<Result<()>>>,
+enum IPCCommand {
+    SetActivity { details: String, state: String },
 }
 
-impl DiscordIPCSync {
-    /// Given a client ID, create a new `DiscordIPCSync` instance.
-    /// Needs to have Discord running for successful execution.
-    ///
-    /// NOTE: Essentially a `DiscordIPC` instance but with blocking I/O.
-    pub fn new(client_id: &str) -> Result<Self> {
-        let rt = Builder::new_multi_thread().enable_all().build()?;
-        let inner = rt.block_on(DiscordIPC::new(client_id))?;
-        Ok(Self {
-            inner,
-            rt,
-            ipc_task: None,
-        })
-    }
-
-    /// Blocking iteration of `DiscordIPC::run`
-    pub fn run(&mut self) -> Result<()> {
-        if self.ipc_task.is_some() {
-            bail!(".run() called multiple times over DiscordIPC.")
-        }
-
-        let handle = self.rt.block_on(self.inner.run())?;
-        self.ipc_task = Some(handle);
-
-        Ok(())
-    }
-
-    /// Convenience function for indefinitely running the Discord IPC message receiver loop; must use *after* `DiscordIPCSync::run`.
-    pub fn wait(&mut self) -> Result<()> {
-        if let Some(handle) = self.ipc_task.take() {
-            self.rt.block_on(handle)??;
-        }
-        Ok(())
-    }
-
-    /// Blocking iteration of `DiscordIPC::set_activity`
-    pub fn set_activity(&mut self, details: &str, state: &str) -> Result<()> {
-        self.rt.block_on(self.inner.set_activity(details, state))
-    }
-}
-
-/// Basic Discord rich presence IPC implementation.
+/// Async Discord IPC client.
 #[derive(Debug, Clone)]
 pub struct DiscordIPC {
-    sock: Arc<Mutex<Option<DiscordIPCSocket>>>,
-    timestamp: u64,
+    tx: mpsc::Sender<IPCCommand>,
     client_id: String,
+    timestamp: u64,
 }
 
 impl DiscordIPC {
-    async fn send_json(&self, json: String, opcode: u32) -> Result<()> {
-        let bytes = json.as_bytes();
-        let mut sock_guard = self.sock.lock().await;
-
-        if let Some(sock) = sock_guard.as_mut() {
-            let packed = pack(opcode, bytes.len() as u32)?;
-            sock.write(&packed).await?;
-            sock.write(bytes).await?;
-        }
-
-        Ok(())
-    }
-
-    /// Given a client ID, create a new `DiscordIPC` instance.
-    /// Needs to have Discord running for successful execution.
+    /// Create a new IPC instance (does NOT start connection).
+    /// To start a connection and run the client, use `.run()`.
     pub async fn new(client_id: &str) -> Result<Self> {
+        let (tx, _rx) = mpsc::channel(32);
+
         Ok(Self {
-            sock: Arc::new(Mutex::new(None)),
-            timestamp: get_current_timestamp()?,
+            tx,
             client_id: client_id.to_string(),
+            timestamp: get_current_timestamp()?,
         })
     }
 
-    async fn connect(&mut self) -> Result<()> {
-        self.sock = Arc::new(Mutex::new(Some(DiscordIPCSocket::new().await?)));
-        Ok(())
-    }
-
-    async fn handshake(&mut self) -> Result<()> {
-        let json = format!(r#"{{"v":1,"client_id":"{}"}}"#, self.client_id);
-        self.send_json(json, 0u32).await?;
-
-        Ok(())
-    }
-
-    async fn wait_for_ready(&mut self) -> Result<()> {
-        let mut sock_guard = self.sock.lock().await;
-
-        loop {
-            if let Some(sock) = sock_guard.as_mut() {
-                let frame = sock.read_frame().await?;
-
-                if frame.opcode == 1 && frame.body.windows(5).any(|w| w == b"READY") {
-                    break;
-                }
-            }
-        }
-        Ok(())
-    }
-
-    /// Starts off the connection with Discord. This includes performing a handshake, waiting for READY and
-    /// starting the IPC response loop.
+    /// Connect, handshake, wait for READY and  start the IPC client.
     pub async fn run(&mut self) -> Result<JoinHandle<Result<()>>> {
-        let mut this = self.clone();
+        let (tx, mut rx) = mpsc::channel::<IPCCommand>(32);
+        self.tx = tx;
+
+        let client_id = self.client_id.clone();
+        let timestamp = self.timestamp;
 
         let handle = tokio::spawn(async move {
             let mut backoff = 1;
+            let mut last_activity: Option<(String, String)> = None;
+
             loop {
-                if let Err(_) = this.connect().await {
+                // initial connect
+                let mut socket = match DiscordIPCSocket::new().await {
+                    Ok(s) => s,
+                    Err(_) => {
+                        sleep(Duration::from_secs(backoff)).await;
+                        continue;
+                    }
+                };
+
+                // handshake
+                let handshake = format!(r#"{{"v":1,"client_id":"{}"}}"#, client_id);
+
+                let packed = pack(0, handshake.len() as u32)?;
+                if socket.write(&packed).await.is_err()
+                    || socket.write(handshake.as_bytes()).await.is_err()
+                {
                     sleep(Duration::from_secs(backoff)).await;
                     continue;
                 }
-                if let Err(_) = this.handshake().await {
-                    sleep(Duration::from_secs(backoff)).await;
-                    continue;
-                }
-                if let Err(_) = this.wait_for_ready().await {
-                    sleep(Duration::from_secs(backoff)).await;
-                    continue;
-                }
+
+                // wait for ready
                 loop {
-                    let mut sock_guard = this.sock.lock().await;
-                    if let Some(s) = sock_guard.as_mut() {
-                        let frame = match s.read_frame().await {
-                            Ok(f) => f,
-                            Err(_) => break,
-                        };
-                        match frame.opcode {
-                            3 => {
-                                let pack = pack(frame.opcode, frame.body.len() as u32)?;
-                                s.write(&pack).await?;
-                                s.write(&frame.body).await?;
-                            }
-                            2 => {
-                                break;
-                            }
-                            _ => {}
-                        }
+                    let frame = match socket.read_frame().await {
+                        Ok(f) => f,
+                        Err(_) => break,
+                    };
+
+                    if frame.opcode == 1 && frame.body.windows(5).any(|w| w == b"READY") {
+                        break;
                     }
                 }
 
-                this.sock = Arc::new(Mutex::new(None));
+                // replay activity after socket
+                if let Some((details, state)) = &last_activity {
+                    let _ = send_activity(&mut socket, details, state, timestamp).await;
+                }
+
+                backoff = 1;
+
+                // main loop
+                loop {
+                    tokio::select! {
+                        Some(cmd) = rx.recv() => {
+                            match cmd {
+                                IPCCommand::SetActivity { details, state } => {
+                                    last_activity = Some((details.clone(), state.clone()));
+
+                                    if send_activity(&mut socket, &details, &state, timestamp).await.is_err() {
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+
+                        frame = socket.read_frame() => {
+                            match frame {
+                                Ok(frame) => {
+                                    match frame.opcode {
+                                        // PING
+                                        3 => {
+                                            let packed = pack(frame.opcode, frame.body.len() as u32)?;
+                                            socket.write(&packed).await?;
+                                            socket.write(&frame.body).await?;
+                                        }
+                                        // CLOSE
+                                        2 => break,
+                                        _ => {}
+                                    }
+                                }
+                                Err(_) => break,
+                            }
+                        }
+                    }
+                }
 
                 sleep(Duration::from_secs(backoff)).await;
                 backoff = (backoff * 2).min(4);
             }
         });
+
         Ok(handle)
     }
 
-    /// Sets a tiny Discord rich presence activity.
-    pub async fn set_activity(&mut self, details: &str, state: &str) -> Result<()> {
-        let pid = std::process::id();
-        let uuid = Uuid::new_v4();
+    /// Sets the Discord Rich presence activity.
+    pub async fn set_activity(&self, details: &str, state: &str) -> Result<()> {
+        self.tx
+            .send(IPCCommand::SetActivity {
+                details: details.to_string(),
+                state: state.to_string(),
+            })
+            .await?;
 
-        let json = format!(
-            r#"
-{{
+        Ok(())
+    }
+}
+
+/// Helper to send activity JSON.
+async fn send_activity(
+    socket: &mut DiscordIPCSocket,
+    details: &str,
+    state: &str,
+    timestamp: u64,
+) -> Result<()> {
+    let pid = std::process::id();
+    let uuid = Uuid::new_v4();
+
+    let json = format!(
+        r#"{{
     "cmd":"SET_ACTIVITY",
     "args": {{
         "pid": {},
@@ -194,12 +176,55 @@ impl DiscordIPC {
         }}
     }},
     "nonce":"{}"
-}}
-"#,
-            pid, details, state, self.timestamp, uuid
-        );
+}}"#,
+        pid, details, state, timestamp, uuid
+    );
 
-        self.send_json(json, 1u32).await?;
+    let packed = pack(1, json.len() as u32)?;
+    socket.write(&packed).await?;
+    socket.write(json.as_bytes()).await?;
+
+    Ok(())
+}
+
+/// Blocking wrapper around DiscordIPC.
+#[derive(Debug)]
+pub struct DiscordIPCSync {
+    inner: DiscordIPC,
+    rt: Runtime,
+    ipc_task: Option<JoinHandle<Result<()>>>,
+}
+
+impl DiscordIPCSync {
+    pub fn new(client_id: &str) -> Result<Self> {
+        let rt = Builder::new_multi_thread().enable_all().build()?;
+        let inner = rt.block_on(DiscordIPC::new(client_id))?;
+
+        Ok(Self {
+            inner,
+            rt,
+            ipc_task: None,
+        })
+    }
+
+    pub fn run(&mut self) -> Result<()> {
+        if self.ipc_task.is_some() {
+            bail!("run() called multiple times");
+        }
+
+        let handle = self.rt.block_on(self.inner.run())?;
+        self.ipc_task = Some(handle);
         Ok(())
+    }
+
+    pub fn wait(&mut self) -> Result<()> {
+        if let Some(handle) = self.ipc_task.take() {
+            self.rt.block_on(handle)??;
+        }
+        Ok(())
+    }
+
+    pub fn set_activity(&self, details: &str, state: &str) -> Result<()> {
+        self.rt.block_on(self.inner.set_activity(details, state))
     }
 }
