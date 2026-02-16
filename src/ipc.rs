@@ -11,7 +11,7 @@ use std::{
 use anyhow::{Result, bail};
 use tokio::{
     runtime::{Builder, Runtime},
-    sync::mpsc,
+    sync::mpsc::{self, Sender},
     task::JoinHandle,
     time::sleep,
 };
@@ -28,7 +28,7 @@ enum IPCCommand {
 /// Async Discord IPC client.
 #[derive(Debug, Clone)]
 pub struct DiscordIPC {
-    tx: mpsc::Sender<IPCCommand>,
+    tx: Sender<IPCCommand>,
     client_id: String,
     start_timestamp: u64,
     running: Arc<AtomicBool>,
