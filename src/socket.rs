@@ -114,10 +114,10 @@ impl DiscordIPCSocket {
 
         match result {
             Ok((readhalf, writehalf)) => {
-                return Ok(Self {
+                Ok(Self {
                     readhalf: Arc::new(Mutex::new(readhalf)),
                     writehalf: Arc::new(Mutex::new(writehalf)),
-                });
+                })
             }
             Err(e) => bail!("Error while creating new IPC client: {e}"),
         }
