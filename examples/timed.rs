@@ -16,4 +16,9 @@ async fn main() {
     sleep(Duration::from_secs(5)).await;
     client.set_activity("believe it", "or not").await.unwrap();
     sleep(Duration::from_secs(5)).await;
+
+    println!(
+        "Duration: {} seconds",
+        client.duration_since().unwrap().as_secs()
+    )
 }

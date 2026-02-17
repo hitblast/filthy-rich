@@ -7,9 +7,9 @@ async fn main() -> Result<()> {
 
     println!("Performing as client: {}", client.client_id());
 
-    client.run().await?; // spawns IPC loop
+    let handle = client.run().await?; // spawns IPC loop; this enforces tokio workflow
     client.set_activity("this runs", "forever").await?; // set activity
-    client.wait().await?;
+    handle.await??;
 
     Ok(())
 }

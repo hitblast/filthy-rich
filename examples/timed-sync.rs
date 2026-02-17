@@ -11,4 +11,9 @@ fn main() {
     sleep(Duration::from_secs(5));
     client.set_activity("believe it", "or not").unwrap();
     sleep(Duration::from_secs(5));
+
+    println!(
+        "Duration: {} seconds",
+        client.duration_since().unwrap().as_secs()
+    )
 }

@@ -1,8 +1,14 @@
 // SPDX-License-Identifier: MIT
 
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::{
+    sync::{
+        Arc,
+        atomic::{AtomicBool, Ordering},
+    },
+    time::{Duration, SystemTime, UNIX_EPOCH},
+};
 
-use anyhow::{Result, bail};
+use anyhow::{Context, Result, bail};
 use serde::Deserialize;
 use serde_json::json;
 use tokio::{
@@ -51,12 +57,12 @@ struct RpcFrame {
 }
 
 /// Primary struct for you to set and update Discord Rich Presences with.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct DiscordIPC {
     tx: Sender<IPCCommand>,
     client_id: String,
     start_timestamp: u64,
-    handle: Option<JoinHandle<Result<()>>>,
+    running: Arc<AtomicBool>,
 }
 
 impl DiscordIPC {
@@ -67,7 +73,7 @@ impl DiscordIPC {
             tx,
             client_id: client_id.to_string(),
             start_timestamp: get_current_timestamp()?,
-            handle: None,
+            running: Arc::new(AtomicBool::new(false)),
         })
     }
 
@@ -76,10 +82,22 @@ impl DiscordIPC {
         self.client_id.clone()
     }
 
+    /// Duration since the IPC client was fired up.
+    pub fn duration_since(&self) -> Result<Duration> {
+        let then = UNIX_EPOCH + Duration::from_secs(self.start_timestamp);
+        let now = SystemTime::now();
+
+        let duration_since = now
+            .duration_since(then)
+            .context("Time went backwards for the IPC client.")?;
+
+        Ok(duration_since)
+    }
+
     /// Run the client.
     /// NOTE: Must be called before any .set_activity() calls.
-    pub async fn run(&mut self) -> Result<()> {
-        if self.handle.is_some() {
+    pub async fn run(&mut self) -> Result<JoinHandle<Result<()>>> {
+        if self.running.swap(true, Ordering::SeqCst) {
             bail!("Cannot run multiple instances of .run() for DiscordIPC.")
         }
 
@@ -185,16 +203,7 @@ impl DiscordIPC {
             }
         });
 
-        self.handle = Some(handle);
-        Ok(())
-    }
-
-    /// Waits for existing IPC loop handle to finish; helps run it forever.
-    pub async fn wait(&mut self) -> Result<()> {
-        if let Some(handle) = self.handle.take() {
-            handle.await??;
-        }
-        Ok(())
+        Ok(handle)
     }
 
     /// Sets/updates the Discord Rich presence activity.
@@ -241,26 +250,38 @@ async fn send_activity(
 pub struct DiscordIPCSync {
     inner: DiscordIPC,
     rt: Runtime,
+    ipc_task: Option<JoinHandle<Result<()>>>,
 }
 
 impl DiscordIPCSync {
     pub fn new(client_id: &str) -> Result<Self> {
         let rt = Builder::new_multi_thread().enable_all().build()?;
         let inner = rt.block_on(DiscordIPC::new(client_id))?;
-        Ok(Self { inner, rt })
+        Ok(Self {
+            inner,
+            rt,
+            ipc_task: None,
+        })
     }
 
     pub fn client_id(&self) -> String {
         self.inner.client_id()
     }
 
+    pub fn duration_since(&self) -> Result<Duration> {
+        self.inner.duration_since()
+    }
+
     pub fn run(&mut self) -> Result<()> {
-        self.rt.block_on(self.inner.run())?;
+        let handle = self.rt.block_on(self.inner.run())?;
+        self.ipc_task = Some(handle);
         Ok(())
     }
 
     pub fn wait(&mut self) -> Result<()> {
-        self.rt.block_on(async { self.inner.wait().await })?;
+        if let Some(handle) = self.ipc_task.take() {
+            self.rt.block_on(handle)??;
+        }
         Ok(())
     }
 
