@@ -5,17 +5,25 @@
 # filthy-rich
 
 Tiny Discord Rich Presence wrapper library for apps.<br>
-**Only <400 LOC! Insanely tiny.**
-
-Requires **Rust 1.82.0 or later.**
+**Only <500 LOC! Insanely tiny.**
 
 </div>
+
+> [!NOTE]
+> The minimum supported Rust version for this project is 1.82.0.
 
 Easily add to your project using this command:
 
 ```bash
 cargo add filthy-rich
 ```
+
+## Features
+
+- Really easy to implement; just create a client ID at the [Discord Developer Portal](https://discord.com/developers) and you're good to go.
+- Asynchronous and enforces the tokio workflow.
+- Persistent updates and convenient API.
+- Auto-reconnect on failure.
 
 ## Starter Snippets
 
@@ -45,12 +53,6 @@ I'm not a fan of too much unnecessary boilerplate hovering around the code I use
 so the primary goal for writing this library is to avoid Windows-specific binds.
 
 The project is also **only intended for actual binary apps**, unless you have a matching stack to go with the library itself.
-
-## TODO
-
-- [x] **(New)** Windows support
-- [x] Timestamp-preserving code
-- [ ] Global `Activity` struct for a well-defined Rich Presence schema
 
 ## License
 
