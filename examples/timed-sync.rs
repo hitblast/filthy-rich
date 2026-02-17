@@ -13,12 +13,15 @@ fn main() {
     client.set_activity("believe it", "or not").unwrap();
     sleep(Duration::from_secs(5));
 
-    client.close().unwrap();
-    client.wait().unwrap();
+    client.clear_activity().unwrap();
+
+    // if you want to drop the connection here:
+    // client.close().unwrap();
+
+    // optional sleep
+    sleep(Duration::from_secs(2));
 
     // 2nd run
-    client.run().unwrap();
-
     client.set_activity("this is the", "second run").unwrap();
     sleep(Duration::from_secs(5));
     client
