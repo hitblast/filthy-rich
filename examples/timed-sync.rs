@@ -21,6 +21,9 @@ fn main() {
     // optional sleep
     sleep(Duration::from_secs(2));
 
+    // if you closed the connection, you must run it afterwards:
+    // client.run().unwrap();
+
     // 2nd run
     client.set_activity("this is the", "second run").unwrap();
     sleep(Duration::from_secs(5));
