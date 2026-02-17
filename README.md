@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="./assets/art.png" width="150px" align="center">
+<img src="./assets/art.png" width="120px" align="center">
 
 # filthy-rich
 
@@ -10,9 +10,9 @@ Tiny Discord Rich Presence wrapper library for apps.<br>
 </div>
 
 > [!NOTE]
-> The minimum supported Rust version for this project is 1.82.0.
+> Requires Rust 1.82.0 or later.
 
-Easily add to your project using this command:
+Add `filthy-rich` to your project with this command:
 
 ```bash
 cargo add filthy-rich
