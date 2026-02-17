@@ -8,7 +8,7 @@ use std::{
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
-use anyhow::{Context, Result, bail};
+use anyhow::{Result, bail};
 use serde::Deserialize;
 use serde_json::json;
 use tokio::{
@@ -47,6 +47,7 @@ fn pack(opcode: u32, data_len: u32) -> Vec<u8> {
 #[derive(Debug)]
 enum IPCCommand {
     SetActivity { details: String, state: String },
+    Close,
 }
 
 #[derive(Debug, Deserialize)]
@@ -61,7 +62,6 @@ struct RpcFrame {
 pub struct DiscordIPC {
     tx: Sender<IPCCommand>,
     client_id: String,
-    start_timestamp: u64,
     running: Arc<AtomicBool>,
 }
 
@@ -72,7 +72,6 @@ impl DiscordIPC {
         Ok(Self {
             tx,
             client_id: client_id.to_string(),
-            start_timestamp: get_current_timestamp()?,
             running: Arc::new(AtomicBool::new(false)),
         })
     }
@@ -82,35 +81,28 @@ impl DiscordIPC {
         self.client_id.clone()
     }
 
-    /// Duration since the IPC client was fired up.
-    pub fn duration_since(&self) -> Result<Duration> {
-        let then = UNIX_EPOCH + Duration::from_secs(self.start_timestamp);
-        let now = SystemTime::now();
-
-        let duration_since = now
-            .duration_since(then)
-            .context("Time went backwards for the IPC client.")?;
-
-        Ok(duration_since)
-    }
-
     /// Run the client.
+    /// Returns a `JoinHandle<anyhow::Result<()>>` for management.
     /// NOTE: Must be called before any .set_activity() calls.
     pub async fn run(&mut self) -> Result<JoinHandle<Result<()>>> {
         if self.running.swap(true, Ordering::SeqCst) {
-            bail!("Cannot run multiple instances of .run() for DiscordIPC.")
+            bail!(
+                "Cannot run multiple instances of .run() for DiscordIPC, or when a session is still closing."
+            )
         }
 
         let (tx, mut rx) = mpsc::channel::<IPCCommand>(32);
         self.tx = tx;
         let client_id = self.client_id.clone();
-        let timestamp = self.start_timestamp;
+
+        let running = self.running.clone();
 
         let handle = tokio::spawn(async move {
             let mut backoff = 1;
             let mut last_activity: Option<(String, String)> = None;
+            let timestamp = get_current_timestamp()?;
 
-            loop {
+            while running.load(Ordering::SeqCst) {
                 // initial connect
                 let mut socket = match DiscordIPCSocket::new().await {
                     Ok(s) => s,
@@ -154,6 +146,7 @@ impl DiscordIPC {
                     }
                 }
 
+                // reset activity if previous instance failed and this instance is basically reconnecting
                 if let Some((details, state)) = &last_activity {
                     let _ = send_activity(&mut socket, details, state, timestamp).await;
                 }
@@ -170,6 +163,11 @@ impl DiscordIPC {
                                     if send_activity(&mut socket, &details, &state, timestamp).await.is_err() {
                                         break;
                                     }
+                                },
+                                IPCCommand::Close => {
+                                    socket.close().await?;
+                                    running.store(false, Ordering::SeqCst);
+                                    return Ok(());
                                 }
                             }
                         }
@@ -201,6 +199,8 @@ impl DiscordIPC {
                 sleep(Duration::from_secs(backoff)).await;
                 backoff = (backoff * 2).min(4);
             }
+
+            Ok(())
         });
 
         Ok(handle)
@@ -209,12 +209,22 @@ impl DiscordIPC {
     /// Sets/updates the Discord Rich presence activity.
     /// NOTE: .run() must be executed prior to calling this.
     pub async fn set_activity(&self, details: &str, state: &str) -> Result<()> {
+        if !self.running.load(Ordering::SeqCst) {
+            bail!("Call .run() before .set_activity() execution.");
+        }
+
         self.tx
             .send(IPCCommand::SetActivity {
                 details: details.to_string(),
                 state: state.to_string(),
             })
             .await?;
+        Ok(())
+    }
+
+    /// Closes the current session of Rich Presence activity.
+    pub async fn close(&self) -> Result<()> {
+        self.tx.send(IPCCommand::Close).await?;
         Ok(())
     }
 }
@@ -268,10 +278,6 @@ impl DiscordIPCSync {
         self.inner.client_id()
     }
 
-    pub fn duration_since(&self) -> Result<Duration> {
-        self.inner.duration_since()
-    }
-
     pub fn run(&mut self) -> Result<()> {
         let handle = self.rt.block_on(self.inner.run())?;
         self.ipc_task = Some(handle);
@@ -287,5 +293,18 @@ impl DiscordIPCSync {
 
     pub fn set_activity(&self, details: &str, state: &str) -> Result<()> {
         self.rt.block_on(self.inner.set_activity(details, state))
+    }
+
+    pub fn close(&self) -> Result<()> {
+        self.rt.block_on(self.inner.close())
+    }
+}
+
+impl Drop for DiscordIPCSync {
+    fn drop(&mut self) {
+        if let Some(handle) = self.ipc_task.take() {
+            let _ = self.rt.block_on(self.inner.close());
+            let _ = self.rt.block_on(handle);
+        }
     }
 }

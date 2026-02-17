@@ -113,12 +113,10 @@ impl DiscordIPCSocket {
         let result = Self::get_socket().await;
 
         match result {
-            Ok((readhalf, writehalf)) => {
-                Ok(Self {
-                    readhalf: Arc::new(Mutex::new(readhalf)),
-                    writehalf: Arc::new(Mutex::new(writehalf)),
-                })
-            }
+            Ok((readhalf, writehalf)) => Ok(Self {
+                readhalf: Arc::new(Mutex::new(readhalf)),
+                writehalf: Arc::new(Mutex::new(writehalf)),
+            }),
             Err(e) => bail!("Error while creating new IPC client: {e}"),
         }
     }
@@ -146,5 +144,27 @@ impl DiscordIPCSocket {
         self.read(&mut body).await?;
 
         Ok(Frame { opcode, body })
+    }
+}
+
+impl DiscordIPCSocket {
+    pub(crate) async fn close(&self) -> Result<()> {
+        // read half: nothing to shutdown, just drop the guard
+        {
+            let _read = self.readhalf.lock().await;
+        }
+
+        // write half: can shutdown
+        let mut write = self.writehalf.lock().await;
+
+        #[cfg(target_family = "unix")]
+        {
+            write.flush().await?;
+            write.shutdown().await?;
+        }
+
+        // on Windows, dropping the halves closes the NamedPipe
+
+        Ok(())
     }
 }
