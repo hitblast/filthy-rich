@@ -95,11 +95,10 @@ impl DiscordIPC {
 
     /// Runs the Discord IPC client.
     pub async fn run(&mut self) -> Result<()> {
-        if self.is_running() {
-            bail!("Cannot run multiple instances of .run().")
+        if self.handle.is_some() && self.running.swap(true, Ordering::SeqCst) {
+            bail!("Cannot run multiple instances of .run().");
         }
 
-        self.running.store(true, Ordering::SeqCst);
         let running = self.running.clone();
 
         let (tx, mut rx) = mpsc::channel::<IPCCommand>(32);
@@ -200,8 +199,8 @@ impl DiscordIPC {
                                     2 => break,
                                     3 => {
                                         let packed = pack(3, frame.body.len() as u32);
-                                        socket.write(&packed).await?;
-                                        socket.write(&frame.body).await?;
+                                        if socket.write(&packed).await.is_err() { break; }
+                                        if socket.write(&frame.body).await.is_err() { break; }
                                     }
                                     _ => {}
                                 },
