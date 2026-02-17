@@ -157,7 +157,7 @@ impl DiscordIPC {
 
                 // reset activity if previous instance failed and this instance is basically reconnecting
                 if let Some((details, state)) = &last_activity {
-                    send_activity(&mut socket, details, state, timestamp).await?;
+                    let _ = send_activity(&mut socket, details, state, timestamp).await;
                 }
 
                 backoff = 1;
