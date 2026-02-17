@@ -1,14 +1,10 @@
 // SPDX-License-Identifier: MIT
 
-use std::{
-    sync::{
-        Arc,
-        atomic::{AtomicBool, Ordering},
-    },
-    time::{Duration, SystemTime, UNIX_EPOCH},
-};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use anyhow::{Result, bail};
+use serde::Deserialize;
+use serde_json::json;
 use tokio::{
     runtime::{Builder, Runtime},
     sync::mpsc::{self, Sender},
@@ -19,39 +15,51 @@ use uuid::Uuid;
 
 use crate::socket::DiscordIPCSocket;
 
-/// Commands sent to the IPC task.
+/*
+ *
+ * Helper funcs
+ *
+ */
+
+fn get_current_timestamp() -> Result<u64> {
+    Ok(SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs())
+}
+
+fn pack(opcode: u32, data_len: u32) -> Vec<u8> {
+    let mut bytes = Vec::with_capacity(8);
+    bytes.extend_from_slice(&opcode.to_le_bytes());
+    bytes.extend_from_slice(&data_len.to_le_bytes());
+    bytes
+}
+
+/*
+ *
+ * General functionality
+ *
+ */
+
 #[derive(Debug)]
 enum IPCCommand {
     SetActivity { details: String, state: String },
 }
 
-/// Async Discord IPC client.
-#[derive(Debug, Clone)]
+#[derive(Debug, Deserialize)]
+struct RpcFrame {
+    cmd: Option<String>,
+    evt: Option<String>,
+    data: Option<serde_json::Value>,
+}
+
+/// Primary struct for you to set and update Discord Rich Presences with.
+#[derive(Debug)]
 pub struct DiscordIPC {
     tx: Sender<IPCCommand>,
     client_id: String,
     start_timestamp: u64,
-    running: Arc<AtomicBool>,
-}
-
-fn get_current_timestamp() -> Result<u64> {
-    let ts = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
-    Ok(ts)
-}
-
-fn pack(opcode: u32, data_len: u32) -> Result<Vec<u8>> {
-    let mut bytes = Vec::new();
-
-    for byte_array in &[opcode.to_le_bytes(), data_len.to_le_bytes()] {
-        bytes.extend_from_slice(byte_array);
-    }
-
-    Ok(bytes)
+    handle: Option<JoinHandle<Result<()>>>,
 }
 
 impl DiscordIPC {
-    /// Create a new IPC instance (does NOT start connection).
-    /// To start a connection and run the client, use `.run()`.
     pub async fn new(client_id: &str) -> Result<Self> {
         let (tx, _rx) = mpsc::channel(32);
 
@@ -59,19 +67,24 @@ impl DiscordIPC {
             tx,
             client_id: client_id.to_string(),
             start_timestamp: get_current_timestamp()?,
-            running: Arc::new(AtomicBool::new(false)),
+            handle: None,
         })
     }
 
-    /// Connect, handshake, wait for READY and  start the IPC client.
-    pub async fn run(&mut self) -> Result<JoinHandle<Result<()>>> {
-        if self.running.swap(true, Ordering::SeqCst) {
-            bail!("Cannot run mulitple instances of .run() for DiscordIPC.")
+    /// The Discord client ID that has been used to initialize this IPC client instance.
+    pub fn client_id(&self) -> String {
+        self.client_id.clone()
+    }
+
+    /// Run the client.
+    /// NOTE: Must be called before any .set_activity() calls.
+    pub async fn run(&mut self) -> Result<()> {
+        if self.handle.is_some() {
+            bail!("Cannot run multiple instances of .run() for DiscordIPC.")
         }
 
         let (tx, mut rx) = mpsc::channel::<IPCCommand>(32);
         self.tx = tx;
-
         let client_id = self.client_id.clone();
         let timestamp = self.start_timestamp;
 
@@ -89,10 +102,10 @@ impl DiscordIPC {
                     }
                 };
 
-                // handshake
-                let handshake = format!(r#"{{"v":1,"client_id":"{}"}}"#, client_id);
+                // initial handshake
+                let handshake = json!({ "v": 1, "client_id": client_id }).to_string();
+                let packed = pack(0, handshake.len() as u32);
 
-                let packed = pack(0, handshake.len() as u32)?;
                 if socket.write(&packed).await.is_err()
                     || socket.write(handshake.as_bytes()).await.is_err()
                 {
@@ -107,19 +120,28 @@ impl DiscordIPC {
                         Err(_) => break,
                     };
 
-                    if frame.opcode == 1 && frame.body.windows(5).any(|w| w == b"READY") {
-                        break;
+                    if frame.opcode != 1 {
+                        continue;
+                    }
+
+                    if let Ok(json) = serde_json::from_slice::<RpcFrame>(&frame.body) {
+                        if json.cmd.as_deref() == Some("DISPATCH")
+                            && json.evt.as_deref() == Some("READY")
+                        {
+                            break;
+                        }
+                        if json.evt.as_deref() == Some("ERROR") {
+                            eprintln!("Discord RPC error: {:?}", json.data);
+                        }
                     }
                 }
 
-                // replay activity after socket
                 if let Some((details, state)) = &last_activity {
                     let _ = send_activity(&mut socket, details, state, timestamp).await;
                 }
 
                 backoff = 1;
 
-                // main loop
                 loop {
                     tokio::select! {
                         Some(cmd) = rx.recv() => {
@@ -136,19 +158,22 @@ impl DiscordIPC {
 
                         frame = socket.read_frame() => {
                             match frame {
-                                Ok(frame) => {
-                                    match frame.opcode {
-                                        // PING
-                                        3 => {
-                                            let packed = pack(frame.opcode, frame.body.len() as u32)?;
-                                            socket.write(&packed).await?;
-                                            socket.write(&frame.body).await?;
+                                Ok(frame) => match frame.opcode {
+                                    1 => {
+                                        if let Ok(json) = serde_json::from_slice::<RpcFrame>(&frame.body) {
+                                            if json.evt.as_deref() == Some("ERROR") {
+                                                eprintln!("Discord RPC error: {:?}", json.data);
+                                            }
                                         }
-                                        // CLOSE
-                                        2 => break,
-                                        _ => {}
                                     }
-                                }
+                                    2 => break,
+                                    3 => {
+                                        let packed = pack(3, frame.body.len() as u32);
+                                        socket.write(&packed).await?;
+                                        socket.write(&frame.body).await?;
+                                    }
+                                    _ => {}
+                                },
                                 Err(_) => break,
                             }
                         }
@@ -160,10 +185,20 @@ impl DiscordIPC {
             }
         });
 
-        Ok(handle)
+        self.handle = Some(handle);
+        Ok(())
     }
 
-    /// Sets the Discord Rich presence activity.
+    /// Waits for existing IPC loop handle to finish; helps run it forever.
+    pub async fn wait(&mut self) -> Result<()> {
+        if let Some(handle) = self.handle.take() {
+            handle.await??;
+        }
+        Ok(())
+    }
+
+    /// Sets/updates the Discord Rich presence activity.
+    /// NOTE: .run() must be executed prior to calling this.
     pub async fn set_activity(&self, details: &str, state: &str) -> Result<()> {
         self.tx
             .send(IPCCommand::SetActivity {
@@ -171,80 +206,61 @@ impl DiscordIPC {
                 state: state.to_string(),
             })
             .await?;
-
         Ok(())
     }
 }
 
-/// Helper to send activity JSON.
 async fn send_activity(
     socket: &mut DiscordIPCSocket,
     details: &str,
     state: &str,
     timestamp: u64,
 ) -> Result<()> {
-    let pid = std::process::id();
-    let uuid = Uuid::new_v4();
+    let json = json!({
+        "cmd": "SET_ACTIVITY",
+        "args": {
+            "pid": std::process::id(),
+            "activity": {
+                "details": details,
+                "state": state,
+                "timestamps": { "start": timestamp }
+            }
+        },
+        "nonce": Uuid::new_v4().to_string()
+    })
+    .to_string();
 
-    let json = format!(
-        r#"{{
-    "cmd":"SET_ACTIVITY",
-    "args": {{
-        "pid": {},
-        "activity": {{
-            "details":"{}",
-            "state":"{}",
-            "timestamps": {{
-                "start": {}
-            }}
-        }}
-    }},
-    "nonce":"{}"
-}}"#,
-        pid, details, state, timestamp, uuid
-    );
-
-    let packed = pack(1, json.len() as u32)?;
+    let packed = pack(1, json.len() as u32);
     socket.write(&packed).await?;
     socket.write(json.as_bytes()).await?;
-
     Ok(())
 }
 
-/// Blocking wrapper around DiscordIPC.
+/// Blocking wrapper
 #[derive(Debug)]
 pub struct DiscordIPCSync {
     inner: DiscordIPC,
     rt: Runtime,
-    ipc_task: Option<JoinHandle<Result<()>>>,
 }
 
 impl DiscordIPCSync {
     pub fn new(client_id: &str) -> Result<Self> {
         let rt = Builder::new_multi_thread().enable_all().build()?;
         let inner = rt.block_on(DiscordIPC::new(client_id))?;
+        Ok(Self { inner, rt })
+    }
 
-        Ok(Self {
-            inner,
-            rt,
-            ipc_task: None,
-        })
+    pub fn client_id(&self) -> String {
+        self.inner.client_id()
     }
 
     pub fn run(&mut self) -> Result<()> {
-        if self.ipc_task.is_some() {
-            bail!("run() called multiple times");
-        }
-
-        let handle = self.rt.block_on(self.inner.run())?;
-        self.ipc_task = Some(handle);
+        self.rt.block_on(self.inner.run())?;
         Ok(())
     }
 
     pub fn wait(&mut self) -> Result<()> {
-        if let Some(handle) = self.ipc_task.take() {
-            self.rt.block_on(handle)??;
-        }
+        self.rt.block_on(async { self.inner.wait().await })?;
         Ok(())
     }
 

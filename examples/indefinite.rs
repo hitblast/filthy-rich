@@ -5,9 +5,11 @@ use filthy_rich::DiscordIPC;
 async fn main() -> Result<()> {
     let mut client = DiscordIPC::new("1463450870480900160").await?;
 
-    let handle = client.run().await?; // spawns IPC loop
-    client.set_activity("this runs", "forever").await?; // set activity
+    println!("Performing as client: {}", client.client_id());
 
-    handle.await??;
+    client.run().await?; // spawns IPC loop
+    client.set_activity("this runs", "forever").await?; // set activity
+    client.wait().await?;
+
     Ok(())
 }

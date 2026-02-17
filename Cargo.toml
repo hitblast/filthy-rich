@@ -3,7 +3,7 @@ name = "filthy-rich"
 description = "Tiny Discord Rich Presence wrapper library for apps."
 authors = ["Anindya Shiddhartha <@hitblast>"]
 repository = "https://github.com/hitblast/filthy-rich"
-version = "0.2.3"
+version = "0.3.0"
 edition = "2021"
 license-file = "LICENSE"
 keywords = ["discord", "discord", "rich-presence", "ipc", "rpc"]
@@ -16,6 +16,8 @@ path = "src/lib.rs"
 
 [dependencies]
 anyhow = "1.0.100"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
 tokio = { version = "1.49.0", features = ["full"] }
 uuid = { version = "1.20.0", features = ["v4"] }
 
