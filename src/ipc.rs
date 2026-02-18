@@ -174,12 +174,15 @@ impl DiscordIPC {
                                     }
                                 },
                                 IPCCommand::ClearActivity => {
+                                    last_activity = None;
                                     if clear_activity(&mut socket).await.is_err() {
                                         break;
                                     }
                                 },
                                 IPCCommand::Close => {
-                                    socket.close().await?;
+                                    let packed = pack(2, 0);
+                                    let _ = socket.write(&packed).await;
+                                    let _ = socket.close().await;
                                     running.store(false, Ordering::SeqCst);
                                     return Ok(());
                                 }
@@ -199,8 +202,8 @@ impl DiscordIPC {
                                     2 => break,
                                     3 => {
                                         let packed = pack(3, frame.body.len() as u32);
-                                        socket.write(&packed).await?;
-                                        socket.write(&frame.body).await?;
+                                        if socket.write(&packed).await.is_err() { break; }
+                                        if socket.write(&frame.body).await.is_err() { break; }
                                     }
                                     _ => {}
                                 },
