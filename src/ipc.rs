@@ -143,7 +143,7 @@ impl DiscordIPC {
                 loop {
                     let frame = match socket.read_frame().await {
                         Ok(f) => f,
-                        Err(_) => break,
+                        Err(_) => continue 'outer,
                     };
 
                     if frame.opcode != 1 {
