@@ -13,7 +13,10 @@ use serde::Deserialize;
 use serde_json::json;
 use tokio::{
     runtime::{Builder, Runtime},
-    sync::mpsc::{self, Sender},
+    sync::{
+        mpsc::{self, Sender},
+        oneshot,
+    },
     task::JoinHandle,
     time::sleep,
 };
@@ -103,19 +106,22 @@ impl DiscordIPC {
         let (tx, mut rx) = mpsc::channel::<IPCCommand>(32);
         self.tx = tx;
         let client_id = self.client_id.clone();
-
         let running = self.running.clone();
+
+        // oneshot channel to signal when READY is received the first time
+        let (ready_tx, ready_rx) = oneshot::channel::<()>();
 
         let handle = tokio::spawn(async move {
             let mut backoff = 1;
             let mut last_activity: Option<(String, String)> = None;
-            let timestamp = get_current_timestamp()?;
+            let mut ready_tx = Some(ready_tx);
 
-            while running.load(Ordering::SeqCst) {
+            'outer: while running.load(Ordering::SeqCst) {
                 // initial connect
                 let mut socket = match DiscordIPCSocket::new().await {
                     Ok(s) => s,
                     Err(_) => {
+                        let _ = ready_tx.take(); // signal failure to run()
                         sleep(Duration::from_secs(backoff)).await;
                         continue;
                     }
@@ -128,11 +134,12 @@ impl DiscordIPC {
                 if socket.write(&packed).await.is_err()
                     || socket.write(handshake.as_bytes()).await.is_err()
                 {
+                    let _ = ready_tx.take(); // drop sender so ready_rx fails
                     sleep(Duration::from_secs(backoff)).await;
                     continue;
                 }
 
-                // wait for ready
+                // wait for READY (blocks until first READY or socket fails)
                 loop {
                     let frame = match socket.read_frame().await {
                         Ok(f) => f,
@@ -147,6 +154,9 @@ impl DiscordIPC {
                         if json.cmd.as_deref() == Some("DISPATCH")
                             && json.evt.as_deref() == Some("READY")
                         {
+                            if let Some(tx) = ready_tx.take() {
+                                let _ = tx.send(()); // moves the sender here exactly once
+                            }
                             break;
                         }
                         if json.evt.as_deref() == Some("ERROR") {
@@ -154,6 +164,8 @@ impl DiscordIPC {
                         }
                     }
                 }
+
+                let timestamp = get_current_timestamp()?;
 
                 // reset activity if previous instance failed and this instance is basically reconnecting
                 if let Some((details, state)) = &last_activity {
@@ -168,23 +180,21 @@ impl DiscordIPC {
                             match cmd {
                                 IPCCommand::SetActivity { details, state } => {
                                     last_activity = Some((details.clone(), state.clone()));
-
                                     if send_activity(&mut socket, &details, &state, timestamp).await.is_err() {
                                         break;
                                     }
                                 },
                                 IPCCommand::ClearActivity => {
                                     last_activity = None;
-                                    if clear_activity(&mut socket).await.is_err() {
-                                        break;
-                                    }
+                                    if clear_activity(&mut socket).await.is_err() { break; }
                                 },
                                 IPCCommand::Close => {
-                                    let packed = pack(2, 0);
+                                    let json = b"{}";
+                                    let packed = pack(2, json.len() as u32);
                                     let _ = socket.write(&packed).await;
                                     let _ = socket.close().await;
                                     running.store(false, Ordering::SeqCst);
-                                    return Ok(());
+                                    break 'outer;
                                 }
                             }
                         }
@@ -221,7 +231,12 @@ impl DiscordIPC {
         });
 
         self.handle = Some(handle);
-        Ok(())
+
+        // block run() until first READY
+        match ready_rx.await {
+            Ok(()) => Ok(()),
+            Err(_) => bail!("Background task exited before READY."),
+        }
     }
 
     /// Waits for the IPC task to finish.
