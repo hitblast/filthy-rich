@@ -16,24 +16,5 @@ async fn main() -> Result<()> {
     client.set_activity("believe it", "or not").await?;
     sleep(Duration::from_secs(5)).await;
 
-    client.clear_activity().await?;
-
-    // if you want to drop the connection here:
-    // client.close().await?;
-
-    // optional sleep
-    sleep(Duration::from_secs(2)).await;
-
-    // if you closed the connection, you must run it afterwards:
-    // client.run().await?;
-
-    // 2nd run
-    client.set_activity("this is the", "second run").await?;
-    sleep(Duration::from_secs(5)).await;
-    client
-        .set_activity("which also runs for", "ten seconds")
-        .await?;
-    sleep(Duration::from_secs(5)).await;
-
     Ok(())
 }

@@ -9,6 +9,9 @@ Tiny Discord Rich Presence wrapper library for apps.<br>
 
 </div>
 
+> [!WARNING]
+> This library is still a work-in-progress, so expect sudden breaking changes.
+
 > [!NOTE]
 > Requires Rust 1.82.0 or later.
 
@@ -21,7 +24,7 @@ cargo add filthy-rich
 ## Features
 
 - Really easy to implement; just create a client ID at the [Discord Developer Portal](https://discord.com/developers) and you're good to go.
-- Asynchronous and enforces the tokio workflow.
+- Asynchronous (synchronous backend is also available).
 - Persistent updates and convenient API.
 - Auto-reconnect on failure.
 
