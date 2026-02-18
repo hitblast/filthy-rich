@@ -24,9 +24,10 @@ cargo add filthy-rich
 ## Features
 
 - Really easy to implement; just create a client ID at the [Discord Developer Portal](https://discord.com/developers) and you're good to go.
-- Asynchronous (synchronous backend is also available).
-- Persistent updates and convenient API.
+- Asynchronous and synchronous backends available according to your use case.
+- Clean redundancy whilst being easy; properly handles Discord's responses.
 - Auto-reconnect on failure.
+- Extremely minimal interface - just a handful of functions and two structs.
 
 ## Starter Snippets
 
