@@ -3,12 +3,14 @@ use filthy_rich::DiscordIPC;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let mut client = DiscordIPC::new("1463450870480900160");
+    let mut client = DiscordIPC::new("1463450870480900160")
+        .on_ready(|| println!("filthy-rich is READY to set activities."));
 
-    println!("Performing as client: {}", client.client_id());
+    client.run(true).await?;
 
-    client.run().await?;
-    client.set_activity("this runs", "forever").await?;
+    client
+        .set_activity("this runs forever".to_string(), None)
+        .await?;
     client.wait().await?;
 
     Ok(())

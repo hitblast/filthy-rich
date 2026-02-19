@@ -6,14 +6,19 @@ use tokio::time::sleep;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let mut client = DiscordIPC::new("1463450870480900160");
+    let mut client = DiscordIPC::new("1463450870480900160")
+        .on_ready(|| println!("filthy-rich is READY to set activities."));
 
     // first run
-    client.run().await.unwrap();
+    client.run(true).await?;
 
-    client.set_activity("this runs", "for ten seconds").await?;
+    client
+        .set_activity("this runs".to_string(), Some("for ten seconds".to_string()))
+        .await?;
     sleep(Duration::from_secs(5)).await;
-    client.set_activity("believe it", "or not").await?;
+    client
+        .set_activity("believe it".to_string(), Some("or not!".to_string()))
+        .await?;
     sleep(Duration::from_secs(5)).await;
 
     Ok(())
