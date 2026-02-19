@@ -363,6 +363,7 @@ impl DiscordIPCSync {
     pub fn client_id(&self) -> String {
         self.inner.client_id()
     }
+
     /// Run the client.
     /// Must be called before any [`set_activity()`] calls.
     pub fn run(&mut self, wait_for_ready: bool) -> Result<()> {
