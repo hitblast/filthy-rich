@@ -95,7 +95,7 @@ impl DiscordIPC {
         }
     }
 
-    /// Run anything on the READY event of the Discord IPC task instance.
+    /// Run a particular closure after receiving the READY event from the local Discord IPC server.
     pub fn on_ready<F: Fn() + Send + 'static>(mut self, f: F) -> Self {
         self.on_ready = Some(Box::new(f));
         self
@@ -141,12 +141,7 @@ impl DiscordIPC {
                 };
 
                 // initial handshake
-                let handshake = json!({ "v": 1, "client_id": client_id }).to_string();
-                let packed = pack(0, handshake.len() as u32);
-
-                if socket.write(&packed).await.is_err()
-                    || socket.write(handshake.as_bytes()).await.is_err()
-                {
+                if socket.do_handshake(&client_id).await.is_err() {
                     sleep(Duration::from_secs(backoff)).await;
                     continue;
                 }
@@ -184,8 +179,9 @@ impl DiscordIPC {
 
                 // reset activity if previous instance failed and this instance is basically reconnecting
                 if let Some((details, state)) = &last_activity {
-                    let _ =
-                        send_activity(&mut socket, details.clone(), state.clone(), timestamp).await;
+                    let _ = socket
+                        .send_activity(details.clone(), state.clone(), timestamp)
+                        .await;
                 }
 
                 backoff = 1;
@@ -196,19 +192,19 @@ impl DiscordIPC {
                             match cmd {
                                 IPCCommand::SetActivity { details, state } => {
                                     last_activity = Some((details.clone(), state.clone()));
-                                    if send_activity(&mut socket, details, state, timestamp).await.is_err() {
+
+                                    if socket.send_activity(details, state, timestamp).await.is_err() {
                                         break;
                                     }
                                 },
                                 IPCCommand::ClearActivity => {
                                     last_activity = None;
-                                    if clear_activity(&mut socket).await.is_err() { break; }
+
+                                    if socket.clear_activity().await.is_err() { break; }
                                 },
                                 IPCCommand::Close => {
-                                    let json = b"{}";
-                                    let packed = pack(2, json.len() as u32);
-                                    let _ = socket.write(&packed).await;
-                                    let _ = socket.close().await;
+                                    let _ = socket.send_close().await;
+
                                     running.store(false, Ordering::SeqCst);
                                     break 'outer;
                                 }
@@ -305,32 +301,63 @@ impl DiscordIPC {
     }
 }
 
-async fn send_activity(
-    socket: &mut DiscordIPCSocket,
-    details: String,
-    state: Option<String>,
-    timestamp: u64,
-) -> Result<()> {
-    let cmd = IPCActivityCmd::new_with(Some(ActivityPayload {
-        details,
-        state,
-        timestamps: TimestampPayload { start: timestamp },
-    }))
-    .to_json()?;
+/*
+ *
+ * Extension of DiscordIPCSocket
+ * (for convenience)
+ *
+ */
 
-    let packed = pack(1, cmd.len() as u32);
-    socket.write(&packed).await?;
-    socket.write(cmd.as_bytes()).await?;
-    Ok(())
-}
+impl DiscordIPCSocket {
+    async fn send_activity(
+        &mut self,
+        details: String,
+        state: Option<String>,
+        timestamp: u64,
+    ) -> Result<()> {
+        let cmd = IPCActivityCmd::new_with(Some(ActivityPayload {
+            details,
+            state,
+            timestamps: TimestampPayload { start: timestamp },
+        }));
 
-async fn clear_activity(socket: &mut DiscordIPCSocket) -> Result<()> {
-    let cmd = IPCActivityCmd::new_with(None).to_json()?;
+        self.send_cmd(cmd).await?;
+        Ok(())
+    }
 
-    let packed = pack(1, cmd.len() as u32);
-    socket.write(&packed).await?;
-    socket.write(cmd.as_bytes()).await?;
-    Ok(())
+    async fn clear_activity(&mut self) -> Result<()> {
+        let cmd = IPCActivityCmd::new_with(None);
+        self.send_cmd(cmd).await?;
+        Ok(())
+    }
+
+    async fn do_handshake(&mut self, client_id: &str) -> Result<()> {
+        let handshake = json!({ "v": 1, "client_id": client_id }).to_string();
+        let packed = pack(0, handshake.len() as u32);
+
+        self.write(&packed).await?;
+        self.write(handshake.as_bytes()).await?;
+
+        Ok(())
+    }
+
+    async fn send_cmd(&mut self, cmd: IPCActivityCmd) -> Result<()> {
+        let cmd = cmd.to_json()?;
+
+        let packed = pack(1, cmd.len() as u32);
+        self.write(&packed).await?;
+        self.write(cmd.as_bytes()).await?;
+        Ok(())
+    }
+
+    async fn send_close(&mut self) -> Result<()> {
+        let json = b"{}";
+        let packed = pack(2, json.len() as u32);
+        let _ = self.write(&packed).await;
+        let _ = self.close().await;
+
+        Ok(())
+    }
 }
 
 /*
