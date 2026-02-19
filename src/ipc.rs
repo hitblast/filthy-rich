@@ -77,6 +77,7 @@ pub struct DiscordIPC {
 }
 
 impl DiscordIPC {
+    /// Creates a new Discord IPC client instance.
     pub fn new(client_id: &str) -> Self {
         let (tx, _rx) = mpsc::channel(32);
 
@@ -94,8 +95,7 @@ impl DiscordIPC {
     }
 
     /// Run the client.
-    /// Returns a `JoinHandle<anyhow::Result<()>>` for management.
-    /// NOTE: Must be called before any .set_activity() calls.
+    /// Must be called before any [`set_activity()`] calls.
     pub async fn run(&mut self) -> Result<()> {
         if self.running.swap(true, Ordering::SeqCst) {
             bail!(
@@ -249,7 +249,7 @@ impl DiscordIPC {
     }
 
     /// Sets/updates the Discord Rich presence activity.
-    /// NOTE: .run() must be executed prior to calling this.
+    /// [`run()`] must be executed prior to calling this.
     pub async fn set_activity(&self, details: &str, state: &str) -> Result<()> {
         if !self.running.load(Ordering::SeqCst) {
             bail!("Call .run() before .set_activity() execution.");
@@ -274,12 +274,9 @@ impl DiscordIPC {
         Ok(())
     }
 
-    /// Safe limit for closing connection.
-    const CLOSE_COOLDOWN_MILLIS: u64 = 200;
-
     /// Closes the current session of Rich Presence activity.
     pub async fn close(&mut self) -> Result<()> {
-        if self.running.swap(false, Ordering::SeqCst) {
+        if self.running.load(Ordering::SeqCst) {
             let _ = self.tx.send(IPCCommand::Close).await;
             if let Some(handle) = self.handle.take() {
                 if let Err(e) = handle.await {
@@ -288,7 +285,6 @@ impl DiscordIPC {
             }
         }
 
-        tokio::time::sleep(Duration::from_millis(Self::CLOSE_COOLDOWN_MILLIS)).await;
         Ok(())
     }
 }
@@ -349,6 +345,7 @@ pub struct DiscordIPCSync {
 }
 
 impl DiscordIPCSync {
+    /// Creates a new Discord IPC client instance.
     pub fn new(client_id: &str) -> Result<Self> {
         let rt = Builder::new_multi_thread().enable_all().build()?;
         let inner = DiscordIPC::new(client_id);
@@ -356,22 +353,34 @@ impl DiscordIPCSync {
         Ok(Self { inner, rt })
     }
 
+    /// The Discord client ID that has been used to initialize this IPC client instance.
     pub fn client_id(&self) -> String {
         self.inner.client_id()
     }
-
+    /// Run the client.
+    /// Must be called before any [`set_activity()`] calls.
     pub fn run(&mut self) -> Result<()> {
         self.rt.block_on(self.inner.run())
     }
 
+    /// Waits for the IPC task to finish.
+    /// [`run()`] must be called to spawn it in the first place.
     pub fn wait(&mut self) -> Result<()> {
         self.rt.block_on(self.inner.wait())
     }
 
+    /// Sets/updates the Discord Rich presence activity.
+    /// [`run()`] must be executed prior to calling this.
     pub fn set_activity(&self, details: &str, state: &str) -> Result<()> {
         self.rt.block_on(self.inner.set_activity(details, state))
     }
 
+    /// Clears a previously set Discord Rich Presence activity.
+    pub fn clear_activity(&self) -> Result<()> {
+        self.rt.block_on(self.inner.clear_activity())
+    }
+
+    /// Closes the current session of Rich Presence activity.
     pub fn close(&mut self) -> Result<()> {
         self.rt.block_on(self.inner.close())
     }
