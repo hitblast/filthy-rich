@@ -31,7 +31,7 @@ cargo add filthy-rich
 
 ## Starter Snippets
 
-Examples are included with the project. To get, first clone the repository:
+Examples are included with the project. See these:
 
 1. For an indefinitely running rich presence, [see this](./examples/indefinite.rs) (or see the [blocking/sync version](./examples/indefinite-sync.rs)).
 2. For an timed, changing rich presence, [see this](./examples/timed.rs) (or see the [blocking/sync version](./examples/timed-sync.rs)).

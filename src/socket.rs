@@ -32,7 +32,7 @@ type ReadHalfCore = OwnedReadHalf;
 #[cfg(target_family = "unix")]
 type WriteHalfCore = OwnedWriteHalf;
 
-pub(crate) struct Frame {
+pub struct Frame {
     pub opcode: u32,
     pub body: Vec<u8>,
 }
@@ -75,7 +75,7 @@ fn get_pipe_path() -> Option<PathBuf> {
 }
 
 #[derive(Debug)]
-pub(crate) struct DiscordIPCSocket {
+pub struct DiscordIPCSocket {
     readhalf: Arc<Mutex<ReadHalfCore>>,
     writehalf: Arc<Mutex<WriteHalfCore>>,
 }
@@ -109,7 +109,7 @@ impl DiscordIPCSocket {
         bail!("Could not connect to pipe.")
     }
 
-    pub(crate) async fn new() -> Result<Self> {
+    pub async fn new() -> Result<Self> {
         let result = Self::get_socket().await;
 
         match result {
@@ -121,19 +121,19 @@ impl DiscordIPCSocket {
         }
     }
 
-    pub(crate) async fn read(&mut self, buffer: &mut [u8]) -> Result<()> {
+    pub async fn read(&mut self, buffer: &mut [u8]) -> Result<()> {
         acquire!(&self.readhalf, stream);
         stream.read_exact(buffer).await?;
         Ok(())
     }
 
-    pub(crate) async fn write(&mut self, buffer: &[u8]) -> Result<()> {
+    pub async fn write(&mut self, buffer: &[u8]) -> Result<()> {
         acquire!(&self.writehalf, stream);
         stream.write_all(buffer).await?;
         Ok(())
     }
 
-    pub(crate) async fn read_frame(&mut self) -> Result<Frame> {
+    pub async fn read_frame(&mut self) -> Result<Frame> {
         let mut header = [0u8; 8];
         self.read(&mut header).await?;
 
@@ -148,7 +148,7 @@ impl DiscordIPCSocket {
 }
 
 impl DiscordIPCSocket {
-    pub(crate) async fn close(&self) -> Result<()> {
+    pub async fn close(&self) -> Result<()> {
         // read half: nothing to shutdown, just drop the guard
         {
             let _read = self.readhalf.lock().await;

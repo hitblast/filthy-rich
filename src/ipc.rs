@@ -20,9 +20,11 @@ use tokio::{
     task::JoinHandle,
     time::sleep,
 };
-use uuid::Uuid;
 
-use crate::socket::DiscordIPCSocket;
+use crate::{
+    activitytypes::{ActivityPayload, IPCActivityCmd, TimestampPayload},
+    socket::DiscordIPCSocket,
+};
 
 /*
  *
@@ -49,7 +51,10 @@ fn pack(opcode: u32, data_len: u32) -> Vec<u8> {
 
 #[derive(Debug)]
 enum IPCCommand {
-    SetActivity { details: String, state: String },
+    SetActivity {
+        details: String,
+        state: Option<String>,
+    },
     ClearActivity,
     Close,
 }
@@ -68,12 +73,12 @@ struct RpcFrame {
  */
 
 /// Primary struct for you to set and update Discord Rich Presences with.
-#[derive(Debug)]
 pub struct DiscordIPC {
     tx: Sender<IPCCommand>,
     client_id: String,
     running: Arc<AtomicBool>,
     handle: Option<JoinHandle<Result<()>>>,
+    on_ready: Option<Box<dyn Fn() + Send + 'static>>,
 }
 
 impl DiscordIPC {
@@ -86,7 +91,14 @@ impl DiscordIPC {
             client_id: client_id.to_string(),
             running: Arc::new(AtomicBool::new(false)),
             handle: None,
+            on_ready: None,
         }
+    }
+
+    /// Run a particular closure after receiving the READY event from the local Discord IPC server.
+    pub fn on_ready<F: Fn() + Send + 'static>(mut self, f: F) -> Self {
+        self.on_ready = Some(Box::new(f));
+        self
     }
 
     /// The Discord client ID that has been used to initialize this IPC client instance.
@@ -95,8 +107,8 @@ impl DiscordIPC {
     }
 
     /// Run the client.
-    /// Must be called before any [`set_activity()`] calls.
-    pub async fn run(&mut self) -> Result<()> {
+    /// Must be called before any [`DiscordIPC::set_activity`] calls.
+    pub async fn run(&mut self, wait_for_ready: bool) -> Result<()> {
         if self.running.swap(true, Ordering::SeqCst) {
             bail!(
                 "Cannot run multiple instances of .run() for DiscordIPC, or when a session is still closing."
@@ -111,9 +123,11 @@ impl DiscordIPC {
         // oneshot channel to signal when READY is received the first time
         let (ready_tx, ready_rx) = oneshot::channel::<()>();
 
+        let on_ready = self.on_ready.take();
+
         let handle = tokio::spawn(async move {
             let mut backoff = 1;
-            let mut last_activity: Option<(String, String)> = None;
+            let mut last_activity: Option<(String, Option<String>)> = None;
             let mut ready_tx = Some(ready_tx);
 
             'outer: while running.load(Ordering::SeqCst) {
@@ -121,20 +135,13 @@ impl DiscordIPC {
                 let mut socket = match DiscordIPCSocket::new().await {
                     Ok(s) => s,
                     Err(_) => {
-                        let _ = ready_tx.take(); // signal failure to run()
                         sleep(Duration::from_secs(backoff)).await;
                         continue;
                     }
                 };
 
                 // initial handshake
-                let handshake = json!({ "v": 1, "client_id": client_id }).to_string();
-                let packed = pack(0, handshake.len() as u32);
-
-                if socket.write(&packed).await.is_err()
-                    || socket.write(handshake.as_bytes()).await.is_err()
-                {
-                    let _ = ready_tx.take(); // drop sender so ready_rx fails
+                if socket.do_handshake(&client_id).await.is_err() {
                     sleep(Duration::from_secs(backoff)).await;
                     continue;
                 }
@@ -157,6 +164,9 @@ impl DiscordIPC {
                             if let Some(tx) = ready_tx.take() {
                                 let _ = tx.send(()); // moves the sender here exactly once
                             }
+                            if let Some(f) = &on_ready {
+                                f();
+                            }
                             break;
                         }
                         if json.evt.as_deref() == Some("ERROR") {
@@ -169,7 +179,9 @@ impl DiscordIPC {
 
                 // reset activity if previous instance failed and this instance is basically reconnecting
                 if let Some((details, state)) = &last_activity {
-                    let _ = send_activity(&mut socket, details, state, timestamp).await;
+                    let _ = socket
+                        .send_activity(details.clone(), state.clone(), timestamp)
+                        .await;
                 }
 
                 backoff = 1;
@@ -180,18 +192,17 @@ impl DiscordIPC {
                             match cmd {
                                 IPCCommand::SetActivity { details, state } => {
                                     last_activity = Some((details.clone(), state.clone()));
-                                    if send_activity(&mut socket, &details, &state, timestamp).await.is_err() {
+
+                                    if socket.send_activity(details, state, timestamp).await.is_err() {
                                         break;
                                     }
                                 },
                                 IPCCommand::ClearActivity => {
                                     last_activity = None;
-                                    if clear_activity(&mut socket).await.is_err() { break; }
+
+                                    if socket.clear_activity().await.is_err() { break; }
                                 },
                                 IPCCommand::Close => {
-                                    let json = b"{}";
-                                    let packed = pack(2, json.len() as u32);
-                                    let _ = socket.write(&packed).await;
                                     let _ = socket.close().await;
                                     running.store(false, Ordering::SeqCst);
                                     break 'outer;
@@ -232,10 +243,13 @@ impl DiscordIPC {
 
         self.handle = Some(handle);
 
-        // block run() until first READY
-        match ready_rx.await {
-            Ok(()) => Ok(()),
-            Err(_) => bail!("Background task exited before READY."),
+        if wait_for_ready {
+            match ready_rx.await {
+                Ok(()) => Ok(()),
+                Err(_) => bail!("Background task exited before READY."),
+            }
+        } else {
+            Ok(())
         }
     }
 
@@ -248,35 +262,36 @@ impl DiscordIPC {
         Ok(())
     }
 
+    /// Checks whether the task is running through the internal atomic indicator flag.
+    pub fn is_running(&self) -> bool {
+        self.running.load(Ordering::SeqCst)
+    }
+
     /// Sets/updates the Discord Rich presence activity.
-    /// [`run()`] must be executed prior to calling this.
-    pub async fn set_activity(&self, details: &str, state: &str) -> Result<()> {
-        if !self.running.load(Ordering::SeqCst) {
+    /// [`DiscordIPC::run`] must be executed prior to calling this.
+    pub async fn set_activity(&self, details: String, state: Option<String>) -> Result<()> {
+        if !self.is_running() {
             bail!("Call .run() before .set_activity() execution.");
         }
 
         self.tx
-            .send(IPCCommand::SetActivity {
-                details: details.to_string(),
-                state: state.to_string(),
-            })
+            .send(IPCCommand::SetActivity { details, state })
             .await?;
         Ok(())
     }
 
     /// Clears a previously set Discord Rich Presence activity.
     pub async fn clear_activity(&self) -> Result<()> {
-        if !self.running.load(Ordering::SeqCst) {
-            return Ok(());
+        if self.is_running() {
+            self.tx.send(IPCCommand::ClearActivity).await?;
         }
 
-        self.tx.send(IPCCommand::ClearActivity).await?;
         Ok(())
     }
 
-    /// Closes the current session of Rich Presence activity.
+    /// Closes the current connection if any.
     pub async fn close(&mut self) -> Result<()> {
-        if self.running.load(Ordering::SeqCst) {
+        if self.is_running() {
             let _ = self.tx.send(IPCCommand::Close).await;
             if let Some(handle) = self.handle.take() {
                 if let Err(e) = handle.await {
@@ -289,47 +304,54 @@ impl DiscordIPC {
     }
 }
 
-async fn send_activity(
-    socket: &mut DiscordIPCSocket,
-    details: &str,
-    state: &str,
-    timestamp: u64,
-) -> Result<()> {
-    let json = json!({
-        "cmd": "SET_ACTIVITY",
-        "args": {
-            "pid": std::process::id(),
-            "activity": {
-                "details": details,
-                "state": state,
-                "timestamps": { "start": timestamp }
-            }
-        },
-        "nonce": Uuid::new_v4().to_string()
-    })
-    .to_string();
+/*
+ *
+ * Extension of DiscordIPCSocket
+ * (for convenience)
+ *
+ */
 
-    let packed = pack(1, json.len() as u32);
-    socket.write(&packed).await?;
-    socket.write(json.as_bytes()).await?;
-    Ok(())
-}
+impl DiscordIPCSocket {
+    async fn send_activity(
+        &mut self,
+        details: String,
+        state: Option<String>,
+        timestamp: u64,
+    ) -> Result<()> {
+        let cmd = IPCActivityCmd::new_with(Some(ActivityPayload {
+            details,
+            state,
+            timestamps: TimestampPayload { start: timestamp },
+        }));
 
-async fn clear_activity(socket: &mut DiscordIPCSocket) -> Result<()> {
-    let json = json!({
-        "cmd": "SET_ACTIVITY",
-        "args": {
-            "pid": std::process::id(),
-            "activity": null
-        },
-        "nonce": Uuid::new_v4().to_string()
-    })
-    .to_string();
+        self.send_cmd(cmd).await?;
+        Ok(())
+    }
 
-    let packed = pack(1, json.len() as u32);
-    socket.write(&packed).await?;
-    socket.write(json.as_bytes()).await?;
-    Ok(())
+    async fn clear_activity(&mut self) -> Result<()> {
+        let cmd = IPCActivityCmd::new_with(None);
+        self.send_cmd(cmd).await?;
+        Ok(())
+    }
+
+    async fn do_handshake(&mut self, client_id: &str) -> Result<()> {
+        let handshake = json!({ "v": 1, "client_id": client_id }).to_string();
+        let packed = pack(0, handshake.len() as u32);
+
+        self.write(&packed).await?;
+        self.write(handshake.as_bytes()).await?;
+
+        Ok(())
+    }
+
+    async fn send_cmd(&mut self, cmd: IPCActivityCmd) -> Result<()> {
+        let cmd = cmd.to_json()?;
+
+        let packed = pack(1, cmd.len() as u32);
+        self.write(&packed).await?;
+        self.write(cmd.as_bytes()).await?;
+        Ok(())
+    }
 }
 
 /*
@@ -338,7 +360,7 @@ async fn clear_activity(socket: &mut DiscordIPCSocket) -> Result<()> {
  *
  */
 
-#[derive(Debug)]
+/// Blocking implementation of [`DiscordIPC`].
 pub struct DiscordIPCSync {
     inner: DiscordIPC,
     rt: Runtime,
@@ -353,25 +375,37 @@ impl DiscordIPCSync {
         Ok(Self { inner, rt })
     }
 
+    /// Run a particular closure after receiving the READY event from the local Discord IPC server.
+    pub fn on_ready<F: Fn() + Send + 'static>(mut self, f: F) -> Self {
+        self.inner.on_ready = Some(Box::new(f));
+        self
+    }
+
     /// The Discord client ID that has been used to initialize this IPC client instance.
     pub fn client_id(&self) -> String {
         self.inner.client_id()
     }
+
     /// Run the client.
-    /// Must be called before any [`set_activity()`] calls.
-    pub fn run(&mut self) -> Result<()> {
-        self.rt.block_on(self.inner.run())
+    /// Must be called before any [`DiscordIPCSync::set_activity`] calls.
+    pub fn run(&mut self, wait_for_ready: bool) -> Result<()> {
+        self.rt.block_on(self.inner.run(wait_for_ready))
     }
 
     /// Waits for the IPC task to finish.
-    /// [`run()`] must be called to spawn it in the first place.
+    /// [`DiscordIPCSync::run`] must be called to spawn it in the first place.
     pub fn wait(&mut self) -> Result<()> {
         self.rt.block_on(self.inner.wait())
     }
 
+    /// Checks whether the task is running through the internal atomic indicator flag.
+    pub fn is_running(&self) -> bool {
+        self.inner.is_running()
+    }
+
     /// Sets/updates the Discord Rich presence activity.
-    /// [`run()`] must be executed prior to calling this.
-    pub fn set_activity(&self, details: &str, state: &str) -> Result<()> {
+    /// [`DiscordIPCSync::run`] must be executed prior to calling this.
+    pub fn set_activity(&self, details: String, state: Option<String>) -> Result<()> {
         self.rt.block_on(self.inner.set_activity(details, state))
     }
 
@@ -380,7 +414,7 @@ impl DiscordIPCSync {
         self.rt.block_on(self.inner.clear_activity())
     }
 
-    /// Closes the current session of Rich Presence activity.
+    /// Closes the current connection if any.
     pub fn close(&mut self) -> Result<()> {
         self.rt.block_on(self.inner.close())
     }
