@@ -203,8 +203,7 @@ impl DiscordIPC {
                                     if socket.clear_activity().await.is_err() { break; }
                                 },
                                 IPCCommand::Close => {
-                                    socket.send_close().await;
-
+                                    let _ = socket.close().await;
                                     running.store(false, Ordering::SeqCst);
                                     break 'outer;
                                 }
@@ -352,13 +351,6 @@ impl DiscordIPCSocket {
         self.write(&packed).await?;
         self.write(cmd.as_bytes()).await?;
         Ok(())
-    }
-
-    async fn send_close(&mut self) {
-        let json = b"{}";
-        let packed = pack(2, json.len() as u32);
-        let _ = self.write(&packed).await;
-        let _ = self.close().await;
     }
 }
 

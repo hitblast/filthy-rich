@@ -21,5 +21,19 @@ async fn main() -> Result<()> {
         .await?;
     sleep(Duration::from_secs(5)).await;
 
+    client.close().await?;
+    sleep(Duration::from_secs(5)).await;
+
+    client.run(true).await?;
+
+    client
+        .set_activity("this runs".to_string(), Some("for ten seconds".to_string()))
+        .await?;
+    sleep(Duration::from_secs(5)).await;
+    client
+        .set_activity("believe it".to_string(), Some("or not!".to_string()))
+        .await?;
+    sleep(Duration::from_secs(5)).await;
+
     Ok(())
 }
