@@ -78,7 +78,7 @@ pub struct DiscordIPC {
     client_id: String,
     running: Arc<AtomicBool>,
     handle: Option<JoinHandle<Result<()>>>,
-    on_ready: Option<Box<dyn Fn() + Send + 'static>>,
+    on_ready: Option<Box<dyn Fn() + Send + Sync + 'static>>,
 }
 
 impl DiscordIPC {
@@ -96,7 +96,7 @@ impl DiscordIPC {
     }
 
     /// Run a particular closure after receiving the READY event from the local Discord IPC server.
-    pub fn on_ready<F: Fn() + Send + 'static>(mut self, f: F) -> Self {
+    pub fn on_ready<F: Fn() + Send + Sync + 'static>(mut self, f: F) -> Self {
         self.on_ready = Some(Box::new(f));
         self
     }
@@ -376,7 +376,7 @@ impl DiscordIPCSync {
     }
 
     /// Run a particular closure after receiving the READY event from the local Discord IPC server.
-    pub fn on_ready<F: Fn() + Send + 'static>(mut self, f: F) -> Self {
+    pub fn on_ready<F: Fn() + Send + Sync + 'static>(mut self, f: F) -> Self {
         self.inner.on_ready = Some(Box::new(f));
         self
     }
