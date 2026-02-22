@@ -68,13 +68,15 @@ pub struct ReadyData {
     pub user: DiscordUser,
 }
 
+/// Represents a Discord user.
 #[derive(Debug, Clone, Deserialize)]
 pub struct DiscordUser {
     pub id: String,
     pub username: String,
     pub global_name: Option<String>,
-    pub discriminator: String,
+    pub discriminator: Option<String>,
     pub avatar: Option<String>,
+    pub avatar_decoration_data: Option<serde_json::Value>,
     pub bot: bool,
     pub flags: Option<u64>,
     pub premium_type: Option<u64>,
