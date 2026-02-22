@@ -55,7 +55,7 @@ https://docs.rs/crate/filthy-rich/latest
 
 ## Yet another library?
 
-I don't want to bother myself with future implementations of this as I want a simplistic Rich Presence client myself for my apps to run in the background and do its job.
+I don't want to bother myself with manually implementing Rich Presence everytime I start working on an app, so I created this library to make things much simpler; I just want a client that does its job in the background.
 
 Also, other implementations felt much more complex to me and also felt like they lacked precise control. This is a more "spread-out" opinion and might hide the truth for some libraries, but yeah, nothing better than throwing your own luck into making yet another IPC client.
 
