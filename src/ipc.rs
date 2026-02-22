@@ -63,7 +63,8 @@ struct RpcFrame {
     data: Option<ReadyData>,
 }
 
-#[derive(Debug, Deserialize)]
+/// An object which is passed during READY capture from Discord IPC instance.
+#[derive(Debug, Clone, Deserialize)]
 pub struct ReadyData {
     pub user: DiscordUser,
 }
