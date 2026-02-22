@@ -55,10 +55,9 @@ https://docs.rs/crate/filthy-rich/latest
 
 ## Yet another library?
 
-I'm not a fan of too much unnecessary boilerplate hovering around the code I use for my primary projects,
-so the primary goal for writing this library is to avoid Windows-specific binds.
+I don't want to bother myself with future implementations of this as I want a simplistic Rich Presence client myself for my apps to run in the background and do its job.
 
-The project is also **only intended for actual binary apps**, unless you have a matching stack to go with the library itself.
+Also, other implementations felt much more complex to me and also felt like they lacked precise control. This is a more "spread-out" opinion and might hide the truth for some libraries, but yeah, nothing better than throwing your own luck into making yet another IPC client.
 
 ## License
 
