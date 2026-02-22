@@ -6,6 +6,9 @@
 
 **Tiny, ergonomic Discord Rich Presence library for your apps.**<br>
 
+![Crates.io MSRV](https://img.shields.io/crates/msrv/filthy-rich)
+![Crates.io Size](https://img.shields.io/crates/size/filthy-rich)
+
 </div>
 
 > [!WARNING]
