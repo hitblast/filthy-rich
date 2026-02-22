@@ -4,7 +4,7 @@
 
 # filthy-rich
 
-Tiny, ergonomic Discord Rich Presence library for your apps.<br>
+**Tiny, ergonomic Discord Rich Presence library for your apps.**<br>
 
 </div>
 
