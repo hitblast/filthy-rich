@@ -2,7 +2,7 @@
 
 <img src="./assets/art.png" width="120px" align="center">
 
-# filthy-rich
+# <img src="https://github.com/github/explore/blob/main/topics/rust/rust.png?raw=true" width="40px"> filthy-rich
 
 **Tiny, ergonomic Discord Rich Presence library for your apps.**<br>
 
