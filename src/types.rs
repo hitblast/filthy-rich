@@ -1,6 +1,7 @@
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+
 #[derive(Debug, Deserialize, Serialize)]
 pub struct IPCActivityCmd {
     cmd: String,
@@ -32,13 +33,15 @@ pub struct IPCActivityCmdArgs {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ActivityPayload {
-    pub details: String,
+    pub(crate) details: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub state: Option<String>,
-    pub timestamps: TimestampPayload,
+    pub(crate) state: Option<String>,
+    pub(crate) timestamps: TimestampPayload,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct TimestampPayload {
-    pub start: u64,
+    pub(crate) start: u64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) end: Option<u64>,
 }

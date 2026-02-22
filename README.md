@@ -4,8 +4,7 @@
 
 # filthy-rich
 
-Tiny Discord Rich Presence wrapper library for apps.<br>
-**Only <500 LOC! Insanely tiny.**
+Tiny, ergonomic Discord Rich Presence library for your apps.<br>
 
 </div>
 
@@ -21,13 +20,13 @@ Add `filthy-rich` to your project with this command:
 cargo add filthy-rich
 ```
 
-## Features
+## 🌺 Features
 
 - Really easy to implement; just create a client ID at the [Discord Developer Portal](https://discord.com/developers) and you're good to go.
+- Fruitful `Activity` builder guaranteed to make you fall in love with setting presences.
+- Clean whilst being easy; properly handles Discord's responses.
 - Asynchronous and synchronous backends available according to your use case.
-- Clean redundancy whilst being easy; properly handles Discord's responses.
 - Auto-reconnect on failure.
-- Extremely minimal interface - just a handful of functions and two structs.
 
 ## Starter Snippets
 

@@ -1,14 +1,14 @@
-use filthy_rich::DiscordIPCSync;
+use filthy_rich::{Activity, DiscordIPCSync};
 
 fn main() {
     let mut client = DiscordIPCSync::new("1463450870480900160")
         .unwrap()
-        .on_ready(|| println!("filthy-rich is READY to set activity updates."));
+        .on_ready(|data| println!("Connected to user: {}", data.user.username));
 
     client.run(true).unwrap();
 
-    client
-        .set_activity("this runs forever".to_string(), None)
-        .unwrap();
+    let activity = Activity::new("this runs forever");
+
+    client.set_activity(activity).unwrap();
     client.wait().unwrap();
 }

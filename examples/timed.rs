@@ -1,38 +1,27 @@
 use anyhow::Result;
 use std::time::Duration;
 
-use filthy_rich::DiscordIPC;
+use filthy_rich::{Activity, DiscordIPC};
 use tokio::time::sleep;
 
 #[tokio::main]
 async fn main() -> Result<()> {
     let mut client = DiscordIPC::new("1463450870480900160")
-        .on_ready(|| println!("filthy-rich is READY to set activities."));
+        .on_ready(|data| println!("Connected to user: {}", data.user.username));
+
+    // create activities for later use
+    let activity_1 = Activity::new("this runs").state("for ten seconds");
+    let activity_2 = Activity::new("believe it").state("or not");
+    let closing_activity = Activity::new("closing presence in...").duration(Duration::from_secs(5));
 
     // first run
     client.run(true).await?;
 
-    client
-        .set_activity("this runs".to_string(), Some("for ten seconds".to_string()))
-        .await?;
+    client.set_activity(activity_1).await?;
     sleep(Duration::from_secs(5)).await;
-    client
-        .set_activity("believe it".to_string(), Some("or not!".to_string()))
-        .await?;
+    client.set_activity(activity_2).await?;
     sleep(Duration::from_secs(5)).await;
-
-    client.close().await?;
-    sleep(Duration::from_secs(5)).await;
-
-    client.run(true).await?;
-
-    client
-        .set_activity("this runs".to_string(), Some("for ten seconds".to_string()))
-        .await?;
-    sleep(Duration::from_secs(5)).await;
-    client
-        .set_activity("believe it".to_string(), Some("or not!".to_string()))
-        .await?;
+    client.set_activity(closing_activity).await?;
     sleep(Duration::from_secs(5)).await;
 
     Ok(())

@@ -22,8 +22,8 @@ use tokio::{
 };
 
 use crate::{
-    activitytypes::{ActivityPayload, IPCActivityCmd, TimestampPayload},
     socket::DiscordIPCSocket,
+    types::{ActivityPayload, IPCActivityCmd, TimestampPayload},
 };
 
 /*
@@ -51,10 +51,7 @@ fn pack(opcode: u32, data_len: u32) -> Vec<u8> {
 
 #[derive(Debug)]
 enum IPCCommand {
-    SetActivity {
-        details: String,
-        state: Option<String>,
-    },
+    SetActivity { activity: Activity },
     ClearActivity,
     Close,
 }
@@ -63,7 +60,55 @@ enum IPCCommand {
 struct RpcFrame {
     cmd: Option<String>,
     evt: Option<String>,
-    data: Option<serde_json::Value>,
+    data: Option<ReadyData>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ReadyData {
+    pub user: DiscordUser,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct DiscordUser {
+    pub id: String,
+    pub username: String,
+    pub global_name: Option<String>,
+    pub discriminator: String,
+    pub avatar: Option<String>,
+    pub bot: bool,
+    pub flags: Option<u64>,
+    pub premium_type: Option<u64>,
+}
+
+/// Represents a Discord Rich Presence activity.
+#[derive(Debug, Clone)]
+pub struct Activity {
+    pub(crate) details: String,
+    pub(crate) state: Option<String>,
+    pub(crate) duration: Option<Duration>,
+}
+
+impl Activity {
+    /// Create a new Discord Rich Presence activity.
+    pub fn new(details: impl Into<String>) -> Self {
+        Self {
+            details: details.into(),
+            state: None,
+            duration: None,
+        }
+    }
+
+    /// Sets the state (bottom text) for the activity.
+    pub fn state(mut self, state: impl Into<String>) -> Self {
+        self.state = Some(state.into());
+        self
+    }
+
+    /// Sets the duration for the activity. This is used to create a countdown timer.
+    pub fn duration(mut self, duration: Duration) -> Self {
+        self.duration = Some(duration);
+        self
+    }
 }
 
 /*
@@ -78,7 +123,7 @@ pub struct DiscordIPC {
     client_id: String,
     running: Arc<AtomicBool>,
     handle: Option<JoinHandle<Result<()>>>,
-    on_ready: Option<Box<dyn Fn() + Send + Sync + 'static>>,
+    on_ready: Option<Box<dyn Fn(ReadyData) + Send + Sync + 'static>>,
 }
 
 impl DiscordIPC {
@@ -96,7 +141,7 @@ impl DiscordIPC {
     }
 
     /// Run a particular closure after receiving the READY event from the local Discord IPC server.
-    pub fn on_ready<F: Fn() + Send + Sync + 'static>(mut self, f: F) -> Self {
+    pub fn on_ready<F: Fn(ReadyData) + Send + Sync + 'static>(mut self, f: F) -> Self {
         self.on_ready = Some(Box::new(f));
         self
     }
@@ -127,7 +172,7 @@ impl DiscordIPC {
 
         let handle = tokio::spawn(async move {
             let mut backoff = 1;
-            let mut last_activity: Option<(String, Option<String>)> = None;
+            let mut last_activity: Option<Activity> = None;
             let mut ready_tx = Some(ready_tx);
 
             'outer: while running.load(Ordering::SeqCst) {
@@ -162,26 +207,26 @@ impl DiscordIPC {
                             && json.evt.as_deref() == Some("READY")
                         {
                             if let Some(tx) = ready_tx.take() {
-                                let _ = tx.send(()); // moves the sender here exactly once
+                                let _ = tx.send(());
                             }
-                            if let Some(f) = &on_ready {
-                                f();
+                            if let (Some(f), Some(data)) = (&on_ready, json.data) {
+                                f(data);
                             }
                             break;
                         }
+
                         if json.evt.as_deref() == Some("ERROR") {
                             eprintln!("Discord RPC error: {:?}", json.data);
                         }
                     }
                 }
 
-                let timestamp = get_current_timestamp()?;
+                // should reset per new run() call
+                let session_start = get_current_timestamp()?;
 
                 // reset activity if previous instance failed and this instance is basically reconnecting
-                if let Some((details, state)) = &last_activity {
-                    let _ = socket
-                        .send_activity(details.clone(), state.clone(), timestamp)
-                        .await;
+                if let Some(activity) = &last_activity {
+                    let _ = socket.send_activity(activity.clone(), session_start).await;
                 }
 
                 backoff = 1;
@@ -190,10 +235,10 @@ impl DiscordIPC {
                     tokio::select! {
                         Some(cmd) = rx.recv() => {
                             match cmd {
-                                IPCCommand::SetActivity { details, state } => {
-                                    last_activity = Some((details.clone(), state.clone()));
+                                IPCCommand::SetActivity { activity } => {
+                                    last_activity = Some(activity.clone());
 
-                                    if socket.send_activity(details, state, timestamp).await.is_err() {
+                                    if socket.send_activity(activity, session_start).await.is_err() {
                                         break;
                                     }
                                 },
@@ -269,14 +314,12 @@ impl DiscordIPC {
 
     /// Sets/updates the Discord Rich presence activity.
     /// [`DiscordIPC::run`] must be executed prior to calling this.
-    pub async fn set_activity(&self, details: String, state: Option<String>) -> Result<()> {
+    pub async fn set_activity(&self, activity: Activity) -> Result<()> {
         if !self.is_running() {
             bail!("Call .run() before .set_activity() execution.");
         }
 
-        self.tx
-            .send(IPCCommand::SetActivity { details, state })
-            .await?;
+        self.tx.send(IPCCommand::SetActivity { activity }).await?;
         Ok(())
     }
 
@@ -312,20 +355,20 @@ impl DiscordIPC {
  */
 
 impl DiscordIPCSocket {
-    async fn send_activity(
-        &mut self,
-        details: String,
-        state: Option<String>,
-        timestamp: u64,
-    ) -> Result<()> {
+    async fn send_activity(&mut self, activity: Activity, session_start: u64) -> Result<()> {
+        let current_t = get_current_timestamp()?;
+        let end_timestamp = activity.duration.map(|d| current_t + d.as_secs());
+
         let cmd = IPCActivityCmd::new_with(Some(ActivityPayload {
-            details,
-            state,
-            timestamps: TimestampPayload { start: timestamp },
+            details: activity.details,
+            state: activity.state,
+            timestamps: TimestampPayload {
+                start: session_start,
+                end: end_timestamp,
+            },
         }));
 
-        self.send_cmd(cmd).await?;
-        Ok(())
+        self.send_cmd(cmd).await
     }
 
     async fn clear_activity(&mut self) -> Result<()> {
@@ -376,7 +419,7 @@ impl DiscordIPCSync {
     }
 
     /// Run a particular closure after receiving the READY event from the local Discord IPC server.
-    pub fn on_ready<F: Fn() + Send + Sync + 'static>(mut self, f: F) -> Self {
+    pub fn on_ready<F: Fn(ReadyData) + Send + Sync + 'static>(mut self, f: F) -> Self {
         self.inner.on_ready = Some(Box::new(f));
         self
     }
@@ -405,8 +448,8 @@ impl DiscordIPCSync {
 
     /// Sets/updates the Discord Rich presence activity.
     /// [`DiscordIPCSync::run`] must be executed prior to calling this.
-    pub fn set_activity(&self, details: String, state: Option<String>) -> Result<()> {
-        self.rt.block_on(self.inner.set_activity(details, state))
+    pub fn set_activity(&self, activity: Activity) -> Result<()> {
+        self.rt.block_on(self.inner.set_activity(activity))
     }
 
     /// Clears a previously set Discord Rich Presence activity.

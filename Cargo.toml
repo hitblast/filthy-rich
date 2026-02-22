@@ -1,6 +1,6 @@
 [package]
 name = "filthy-rich"
-description = "Tiny Discord Rich Presence wrapper library for apps."
+description = "Tiny, ergonomic Discord Rich Presence library for your apps."
 authors = ["Anindya Shiddhartha <@hitblast>"]
 repository = "https://github.com/hitblast/filthy-rich"
 version = "0.5.1"
