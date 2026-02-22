@@ -46,9 +46,9 @@ cargo run --example indefinite  # ex. 1
 cargo run --example timed  # ex. 2
 ```
 
-## API Reference
+## API Reference (docs.rs)
 
-docs.rs: https://docs.rs/crate/filthy-rich/latest
+https://docs.rs/crate/filthy-rich/latest
 
 ## Yet another library?
 
