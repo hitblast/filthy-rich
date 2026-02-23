@@ -9,6 +9,8 @@
 ![Crates.io MSRV](https://img.shields.io/crates/msrv/filthy-rich)
 ![Crates.io Size](https://img.shields.io/crates/size/filthy-rich)
 
+</div>
+
 ```rust
 // a sneak-peek into what you'll be working with
 // this usually helps me personally when looking at libraries
@@ -28,8 +30,6 @@ async fn main() -> Result<()> {
     Ok(())
 }
 ```
-
-</div>
 
 > [!WARNING]
 > This library is still a work-in-progress, so expect sudden breaking changes.
