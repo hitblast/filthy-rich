@@ -93,6 +93,9 @@ pub struct Activity {
 
 pub struct ActivityBuilder;
 
+/// A Rich Presence activity with top text and possibly more attributes.
+/// [`ActivityWithDetails::build`] needs to be called on it in order to
+/// turn it into a proper [`Activity`] instance.
 pub struct ActivityWithDetails {
     details: String,
     state: Option<String>,
@@ -104,6 +107,7 @@ impl Activity {
         ActivityBuilder
     }
 
+    /// Initializes a Rich Presence activity without any content; useful for small apps.
     pub fn build_empty() -> Self {
         Self {
             details: None,
@@ -114,6 +118,7 @@ impl Activity {
 }
 
 impl ActivityBuilder {
+    /// Top text for your activity.
     pub fn details(self, details: impl Into<String>) -> ActivityWithDetails {
         ActivityWithDetails {
             details: details.into(),
@@ -124,16 +129,20 @@ impl ActivityBuilder {
 }
 
 impl ActivityWithDetails {
+    /// Bottom text for your activity.
     pub fn state(mut self, state: impl Into<String>) -> Self {
         self.state = Some(state.into());
         self
     }
 
+    /// Countdown duration for your activity.
     pub fn duration(mut self, duration: Duration) -> Self {
         self.duration = Some(duration);
         self
     }
 
+    /// Parses the state of this builder into a usable [`Activity`] for you to pass through either [`DiscordIPC::set_activity`]
+    /// or [`DiscordIPCSync::set_activity`].
     pub fn build(self) -> Activity {
         Activity {
             details: Some(self.details),
