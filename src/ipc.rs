@@ -86,31 +86,60 @@ pub struct DiscordUser {
 /// Represents a Discord Rich Presence activity.
 #[derive(Debug, Clone)]
 pub struct Activity {
-    pub(crate) details: String,
-    pub(crate) state: Option<String>,
-    pub(crate) duration: Option<Duration>,
+    details: Option<String>,
+    state: Option<String>,
+    duration: Option<Duration>,
+}
+
+pub struct ActivityBuilder;
+
+pub struct ActivityWithDetails {
+    details: String,
+    state: Option<String>,
+    duration: Option<Duration>,
 }
 
 impl Activity {
-    /// Create a new Discord Rich Presence activity.
-    pub fn new(details: impl Into<String>) -> Self {
+    pub fn new() -> ActivityBuilder {
+        ActivityBuilder
+    }
+
+    pub fn build_empty() -> Self {
         Self {
+            details: None,
+            state: None,
+            duration: None,
+        }
+    }
+}
+
+impl ActivityBuilder {
+    pub fn details(self, details: impl Into<String>) -> ActivityWithDetails {
+        ActivityWithDetails {
             details: details.into(),
             state: None,
             duration: None,
         }
     }
+}
 
-    /// Sets the state (bottom text) for the activity.
+impl ActivityWithDetails {
     pub fn state(mut self, state: impl Into<String>) -> Self {
         self.state = Some(state.into());
         self
     }
 
-    /// Sets the duration for the activity. This is used to create a countdown timer.
     pub fn duration(mut self, duration: Duration) -> Self {
         self.duration = Some(duration);
         self
+    }
+
+    pub fn build(self) -> Activity {
+        Activity {
+            details: Some(self.details),
+            state: self.state,
+            duration: self.duration,
+        }
     }
 }
 

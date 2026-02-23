@@ -7,7 +7,7 @@ fn main() {
 
     client.run(true).unwrap();
 
-    let activity = Activity::new("this runs forever");
+    let activity = Activity::new().details("this runs forever").build();
 
     client.set_activity(activity).unwrap();
     client.wait().unwrap();

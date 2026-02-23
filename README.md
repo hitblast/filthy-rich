@@ -9,6 +9,26 @@
 ![Crates.io MSRV](https://img.shields.io/crates/msrv/filthy-rich)
 ![Crates.io Size](https://img.shields.io/crates/size/filthy-rich)
 
+```rust
+// a sneak-peek into what you'll be working with
+// this usually helps me personally when looking at libraries
+
+#[tokio::main]
+async fn main() -> Result<()> {
+    let mut client = DiscordIPC::new("1463450870480900160")
+        .on_ready(|data| println!("Connected to: {}", data.user.username));
+
+    client.run(true).await?;
+
+    let activity = Activity::build_empty();
+
+    client.set_activity(activity).await?;
+    client.wait().await?;
+
+    Ok(())
+}
+```
+
 </div>
 
 > [!WARNING]

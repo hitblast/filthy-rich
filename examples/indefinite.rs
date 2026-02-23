@@ -8,7 +8,7 @@ async fn main() -> Result<()> {
 
     client.run(true).await?;
 
-    let activity = Activity::new("this runs forever");
+    let activity = Activity::new().details("this runs forever").build();
 
     client.set_activity(activity).await?;
     client.wait().await?;

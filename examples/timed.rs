@@ -10,9 +10,20 @@ async fn main() -> Result<()> {
         .on_ready(|data| println!("Connected to user: {}", data.user.username));
 
     // create activities for later use
-    let activity_1 = Activity::new("this runs").state("for ten seconds");
-    let activity_2 = Activity::new("believe it").state("or not");
-    let closing_activity = Activity::new("closing presence in...").duration(Duration::from_secs(5));
+    let activity_1 = Activity::new()
+        .details("this runs")
+        .state("for ten seconds")
+        .build();
+
+    let activity_2 = Activity::new()
+        .details("believe it")
+        .state("or not")
+        .build();
+
+    let closing_activity = Activity::new()
+        .details("closing presence in...")
+        .duration(Duration::from_secs(5))
+        .build();
 
     // first run
     client.run(true).await?;

@@ -33,7 +33,8 @@ pub struct IPCActivityCmdArgs {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ActivityPayload {
-    pub(crate) details: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) details: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) state: Option<String>,
     pub(crate) timestamps: TimestampPayload,
