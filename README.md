@@ -8,6 +8,7 @@
 
 ![Crates.io MSRV](https://img.shields.io/crates/msrv/filthy-rich)
 ![Crates.io Size](https://img.shields.io/crates/size/filthy-rich)
+![Crates.io License](https://img.shields.io/crates/l/filthy-rich)
 
 </div>
 
