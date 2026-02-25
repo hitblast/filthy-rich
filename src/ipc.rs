@@ -36,13 +36,6 @@ fn get_current_timestamp() -> Result<u64> {
     Ok(SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs())
 }
 
-fn pack(opcode: u32, data_len: u32) -> Vec<u8> {
-    let mut bytes = Vec::with_capacity(8);
-    bytes.extend_from_slice(&opcode.to_le_bytes());
-    bytes.extend_from_slice(&data_len.to_le_bytes());
-    bytes
-}
-
 /*
  *
  * Frame/cmd structs
@@ -308,9 +301,7 @@ impl DiscordIPC {
                                     }
                                     2 => break,
                                     3 => {
-                                        let packed = pack(3, frame.body.len() as u32);
-                                        if socket.write(&packed).await.is_err() { break; }
-                                        if socket.write(&frame.body).await.is_err() { break; }
+                                        if socket.send_frame(3, frame.body).await.is_err() { break; }
                                     }
                                     _ => {}
                                 },
@@ -420,20 +411,13 @@ impl DiscordIPCSocket {
 
     async fn do_handshake(&mut self, client_id: &str) -> Result<()> {
         let handshake = json!({ "v": 1, "client_id": client_id }).to_string();
-        let packed = pack(0, handshake.len() as u32);
-
-        self.write(&packed).await?;
-        self.write(handshake.as_bytes()).await?;
-
+        self.send_frame(0, handshake).await?;
         Ok(())
     }
 
     async fn send_cmd(&mut self, cmd: IPCActivityCmd) -> Result<()> {
         let cmd = cmd.to_json()?;
-
-        let packed = pack(1, cmd.len() as u32);
-        self.write(&packed).await?;
-        self.write(cmd.as_bytes()).await?;
+        self.send_frame(1, cmd).await?;
         Ok(())
     }
 }

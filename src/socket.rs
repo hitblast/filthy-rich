@@ -121,13 +121,13 @@ impl DiscordIPCSocket {
         }
     }
 
-    pub async fn read(&self, buffer: &mut [u8]) -> Result<()> {
+    async fn read(&self, buffer: &mut [u8]) -> Result<()> {
         acquire!(&self.readhalf, stream);
         stream.read_exact(buffer).await?;
         Ok(())
     }
 
-    pub async fn write<T: AsRef<[u8]>>(&self, buffer: T) -> Result<()> {
+    async fn write<T: AsRef<[u8]>>(&self, buffer: T) -> Result<()> {
         acquire!(&self.writehalf, stream);
         stream.write_all(buffer.as_ref()).await?;
         Ok(())
