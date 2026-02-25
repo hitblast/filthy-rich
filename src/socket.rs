@@ -127,9 +127,9 @@ impl DiscordIPCSocket {
         Ok(())
     }
 
-    pub async fn write(&self, buffer: &[u8]) -> Result<()> {
+    pub async fn write<T: AsRef<[u8]>>(&self, buffer: T) -> Result<()> {
         acquire!(&self.writehalf, stream);
-        stream.write_all(buffer).await?;
+        stream.write_all(buffer.as_ref()).await?;
         Ok(())
     }
 
@@ -145,10 +145,18 @@ impl DiscordIPCSocket {
 
         Ok(Frame { opcode, body })
     }
-}
 
-impl DiscordIPCSocket {
-    pub async fn close(&self) -> Result<()> {
+    pub async fn send_frame<T: AsRef<[u8]>>(&self, opcode: u32, body: T) -> Result<()> {
+        let mut header = Vec::with_capacity(8);
+        header.extend_from_slice(&opcode.to_le_bytes());
+        header.extend_from_slice(&(body.as_ref().len() as u32).to_le_bytes());
+
+        self.write(&header).await?;
+        self.write(body).await?;
+        Ok(())
+    }
+
+    pub async fn close(self) -> Result<()> {
         // read half: nothing to shutdown, just drop the guard
         {
             let _read = self.readhalf.lock().await;
