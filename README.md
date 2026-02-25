@@ -4,7 +4,7 @@
 
 # <img src="https://github.com/github/explore/blob/main/topics/rust/rust.png?raw=true" width="40px"> filthy-rich
 
-**Tiny, ergonomic Discord Rich Presence library for your apps.**<br>
+**Tiny, ergonomic Discord Rich Presence library for your Rust apps.**<br>
 
 ![Crates.io MSRV](https://img.shields.io/crates/msrv/filthy-rich)
 ![Crates.io Size](https://img.shields.io/crates/size/filthy-rich)
