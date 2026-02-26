@@ -7,7 +7,11 @@ fn main() {
 
     client.run(true).unwrap();
 
-    let activity = Activity::new().details("this runs forever").build();
+    let activity = Activity::new()
+        .details("this runs forever")
+        .large_image("game_icon", Some("Playing a game"))
+        .small_image("status", Some("Online"))
+        .build();
 
     client.set_activity(activity).unwrap();
     client.wait().unwrap();
