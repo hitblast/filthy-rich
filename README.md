@@ -80,6 +80,12 @@ I don't want to bother myself with manually implementing Rich Presence everytime
 
 Also, other implementations felt much more complex to me and also felt like they lacked precise control. This is a more "spread-out" opinion and might hide the truth for some libraries, but yeah, nothing better than throwing your own luck into making yet another IPC client.
 
+## Contributors
+
+Thanks to the amazing contributors for adding to this repository:
+
+- [ParkBlake](https://github.com/ParkBlake)
+
 ## License
 
 Licensed under [MIT](./LICENSE).
