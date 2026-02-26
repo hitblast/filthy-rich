@@ -38,6 +38,20 @@ pub struct ActivityPayload {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) state: Option<String>,
     pub(crate) timestamps: TimestampPayload,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) assets: Option<AssetsPayload>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct AssetsPayload {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) large_image: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) large_text: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) small_image: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) small_text: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]

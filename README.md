@@ -23,7 +23,12 @@ async fn main() -> Result<()> {
 
     client.run(true).await?;
 
-    let activity = Activity::build_empty();
+    let activity = Activity::new()
+        .details("Playing a game")
+        .state("In menu")
+        .large_image("game_icon", Some("My Game"))
+        .small_image("status", Some("Online"))
+        .build();
 
     client.set_activity(activity).await?;
     client.wait().await?;
@@ -48,6 +53,7 @@ cargo add filthy-rich
 
 - Really easy to implement; just create a client ID at the [Discord Developer Portal](https://discord.com/developers) and you're good to go.
 - Fruitful `Activity` builder guaranteed to make you fall in love with setting presences.
+- Support for rich presence assets (large and small images with hover text).
 - Clean whilst being easy; properly handles Discord's responses.
 - Asynchronous and synchronous backends available according to your use case.
 - Auto-reconnect on failure.

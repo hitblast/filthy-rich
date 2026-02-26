@@ -82,6 +82,10 @@ pub struct Activity {
     details: Option<String>,
     state: Option<String>,
     duration: Option<Duration>,
+    large_image_key: Option<String>,
+    large_image_text: Option<String>,
+    small_image_key: Option<String>,
+    small_image_text: Option<String>,
 }
 
 pub struct ActivityBuilder;
@@ -93,6 +97,10 @@ pub struct ActivityWithDetails {
     details: String,
     state: Option<String>,
     duration: Option<Duration>,
+    large_image_key: Option<String>,
+    large_image_text: Option<String>,
+    small_image_key: Option<String>,
+    small_image_text: Option<String>,
 }
 
 impl Activity {
@@ -106,6 +114,10 @@ impl Activity {
             details: None,
             state: None,
             duration: None,
+            large_image_key: None,
+            large_image_text: None,
+            small_image_key: None,
+            small_image_text: None,
         }
     }
 }
@@ -117,6 +129,10 @@ impl ActivityBuilder {
             details: details.into(),
             state: None,
             duration: None,
+            large_image_key: None,
+            large_image_text: None,
+            small_image_key: None,
+            small_image_text: None,
         }
     }
 }
@@ -134,6 +150,20 @@ impl ActivityWithDetails {
         self
     }
 
+    /// Large image for your activity (e.g., game icon).
+    pub fn large_image(mut self, key: impl Into<String>, text: Option<impl Into<String>>) -> Self {
+        self.large_image_key = Some(key.into());
+        self.large_image_text = text.map(|t| t.into());
+        self
+    }
+
+    /// Small image for your activity (e.g., status icon).
+    pub fn small_image(mut self, key: impl Into<String>, text: Option<impl Into<String>>) -> Self {
+        self.small_image_key = Some(key.into());
+        self.small_image_text = text.map(|t| t.into());
+        self
+    }
+
     /// Parses the state of this builder into a usable [`Activity`] for you to pass through either [`DiscordIPC::set_activity`]
     /// or [`DiscordIPCSync::set_activity`].
     pub fn build(self) -> Activity {
@@ -141,6 +171,10 @@ impl ActivityWithDetails {
             details: Some(self.details),
             state: self.state,
             duration: self.duration,
+            large_image_key: self.large_image_key,
+            large_image_text: self.large_image_text,
+            small_image_key: self.small_image_key,
+            small_image_text: self.small_image_text,
         }
     }
 }
@@ -391,6 +425,17 @@ impl DiscordIPCSocket {
         let current_t = get_current_timestamp()?;
         let end_timestamp = activity.duration.map(|d| current_t + d.as_secs());
 
+        let assets = if activity.large_image_key.is_some() || activity.small_image_key.is_some() {
+            Some(crate::types::AssetsPayload {
+                large_image: activity.large_image_key,
+                large_text: activity.large_image_text,
+                small_image: activity.small_image_key,
+                small_text: activity.small_image_text,
+            })
+        } else {
+            None
+        };
+
         let cmd = IPCActivityCmd::new_with(Some(ActivityPayload {
             details: activity.details,
             state: activity.state,
@@ -398,9 +443,11 @@ impl DiscordIPCSocket {
                 start: session_start,
                 end: end_timestamp,
             },
+            assets,
         }));
 
-        self.send_cmd(cmd).await
+        self.send_cmd(cmd).await?;
+        Ok(())
     }
 
     async fn clear_activity(&mut self) -> Result<()> {
