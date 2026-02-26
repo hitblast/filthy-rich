@@ -9,7 +9,6 @@ use std::{
 };
 
 use anyhow::{Result, bail};
-use serde::Deserialize;
 use serde_json::json;
 use tokio::{
     runtime::{Builder, Runtime},
@@ -23,167 +22,14 @@ use tokio::{
 
 use crate::{
     socket::DiscordIPCSocket,
-    types::{ActivityPayload, IPCActivityCmd, TimestampPayload},
+    types::{Activity, ActivityPayload, IPCActivityCmd, IPCCommand, ReadyData, RpcFrame, TimestampPayload},
 };
 
-/*
- *
- * Helper funcs
- *
- */
-
 fn get_current_timestamp() -> Result<u64> {
-    Ok(SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs())
+    Ok(SystemTime::now()
+        .duration_since(UNIX_EPOCH)?
+        .as_secs())
 }
-
-/*
- *
- * Frame/cmd structs
- *
- */
-
-#[derive(Debug)]
-enum IPCCommand {
-    SetActivity { activity: Activity },
-    ClearActivity,
-    Close,
-}
-
-#[derive(Debug, Deserialize)]
-struct RpcFrame {
-    cmd: Option<String>,
-    evt: Option<String>,
-    data: Option<ReadyData>,
-}
-
-/// An object which is passed during READY capture from Discord IPC instance.
-#[derive(Debug, Clone, Deserialize)]
-pub struct ReadyData {
-    pub user: DiscordUser,
-}
-
-/// Represents a Discord user.
-#[derive(Debug, Clone, Deserialize)]
-pub struct DiscordUser {
-    pub id: String,
-    pub username: String,
-    pub global_name: Option<String>,
-    pub discriminator: Option<String>,
-    pub avatar: Option<String>,
-    pub avatar_decoration_data: Option<serde_json::Value>,
-    pub bot: bool,
-    pub flags: Option<u64>,
-    pub premium_type: Option<u64>,
-}
-
-/// Represents a Discord Rich Presence activity.
-#[derive(Debug, Clone)]
-pub struct Activity {
-    details: Option<String>,
-    state: Option<String>,
-    duration: Option<Duration>,
-    large_image_key: Option<String>,
-    large_image_text: Option<String>,
-    small_image_key: Option<String>,
-    small_image_text: Option<String>,
-}
-
-pub struct ActivityBuilder;
-
-/// A Rich Presence activity with top text and possibly more attributes.
-/// [`ActivityWithDetails::build`] needs to be called on it in order to
-/// turn it into a proper [`Activity`] instance.
-pub struct ActivityWithDetails {
-    details: String,
-    state: Option<String>,
-    duration: Option<Duration>,
-    large_image_key: Option<String>,
-    large_image_text: Option<String>,
-    small_image_key: Option<String>,
-    small_image_text: Option<String>,
-}
-
-impl Activity {
-    pub fn new() -> ActivityBuilder {
-        ActivityBuilder
-    }
-
-    /// Initializes a Rich Presence activity without any content; useful for small apps.
-    pub fn build_empty() -> Self {
-        Self {
-            details: None,
-            state: None,
-            duration: None,
-            large_image_key: None,
-            large_image_text: None,
-            small_image_key: None,
-            small_image_text: None,
-        }
-    }
-}
-
-impl ActivityBuilder {
-    /// Top text for your activity.
-    pub fn details(self, details: impl Into<String>) -> ActivityWithDetails {
-        ActivityWithDetails {
-            details: details.into(),
-            state: None,
-            duration: None,
-            large_image_key: None,
-            large_image_text: None,
-            small_image_key: None,
-            small_image_text: None,
-        }
-    }
-}
-
-impl ActivityWithDetails {
-    /// Bottom text for your activity.
-    pub fn state(mut self, state: impl Into<String>) -> Self {
-        self.state = Some(state.into());
-        self
-    }
-
-    /// Countdown duration for your activity.
-    pub fn duration(mut self, duration: Duration) -> Self {
-        self.duration = Some(duration);
-        self
-    }
-
-    /// Large image for your activity (e.g., game icon).
-    pub fn large_image(mut self, key: impl Into<String>, text: Option<impl Into<String>>) -> Self {
-        self.large_image_key = Some(key.into());
-        self.large_image_text = text.map(|t| t.into());
-        self
-    }
-
-    /// Small image for your activity (e.g., status icon).
-    pub fn small_image(mut self, key: impl Into<String>, text: Option<impl Into<String>>) -> Self {
-        self.small_image_key = Some(key.into());
-        self.small_image_text = text.map(|t| t.into());
-        self
-    }
-
-    /// Parses the state of this builder into a usable [`Activity`] for you to pass through either [`DiscordIPC::set_activity`]
-    /// or [`DiscordIPCSync::set_activity`].
-    pub fn build(self) -> Activity {
-        Activity {
-            details: Some(self.details),
-            state: self.state,
-            duration: self.duration,
-            large_image_key: self.large_image_key,
-            large_image_text: self.large_image_text,
-            small_image_key: self.small_image_key,
-            small_image_text: self.small_image_text,
-        }
-    }
-}
-
-/*
- *
- * Async implementation
- *
- */
 
 /// Primary struct for you to set and update Discord Rich Presences with.
 pub struct DiscordIPC {
@@ -195,7 +41,6 @@ pub struct DiscordIPC {
 }
 
 impl DiscordIPC {
-    /// Creates a new Discord IPC client instance.
     pub fn new(client_id: &str) -> Self {
         let (tx, _rx) = mpsc::channel(32);
 
@@ -214,7 +59,7 @@ impl DiscordIPC {
         self
     }
 
-    /// The Discord client ID that has been used to initialize this IPC client instance.
+    /// Returns the client ID.
     pub fn client_id(&self) -> String {
         self.client_id.clone()
     }
@@ -243,7 +88,7 @@ impl DiscordIPC {
             let mut last_activity: Option<Activity> = None;
             let mut ready_tx = Some(ready_tx);
 
-            'outer: while running.load(Ordering::SeqCst) {
+            while running.load(Ordering::SeqCst) {
                 // initial connect
                 let mut socket = match DiscordIPCSocket::new().await {
                     Ok(s) => s,
@@ -263,7 +108,7 @@ impl DiscordIPC {
                 loop {
                     let frame = match socket.read_frame().await {
                         Ok(f) => f,
-                        Err(_) => continue 'outer,
+                        Err(_) => break,
                     };
 
                     if frame.opcode != 1 {
@@ -277,8 +122,10 @@ impl DiscordIPC {
                             if let Some(tx) = ready_tx.take() {
                                 let _ = tx.send(());
                             }
-                            if let (Some(f), Some(data)) = (&on_ready, json.data) {
-                                f(data);
+                            if let Some(f) = on_ready.as_ref() {
+                                if let Some(data) = json.data {
+                                    f(data);
+                                }
                             }
                             break;
                         }
@@ -289,10 +136,8 @@ impl DiscordIPC {
                     }
                 }
 
-                // should reset per new run() call
                 let session_start = get_current_timestamp()?;
 
-                // reset activity if previous instance failed and this instance is basically reconnecting
                 if let Some(activity) = &last_activity {
                     let _ = socket.send_activity(activity.clone(), session_start).await;
                 }
@@ -318,7 +163,7 @@ impl DiscordIPC {
                                 IPCCommand::Close => {
                                     let _ = socket.close().await;
                                     running.store(false, Ordering::SeqCst);
-                                    break 'outer;
+                                    break;
                                 }
                             }
                         }
@@ -332,11 +177,11 @@ impl DiscordIPC {
                                                 eprintln!("Discord RPC error: {:?}", json.data);
                                             }
                                         }
-                                    }
+                                    },
                                     2 => break,
                                     3 => {
                                         if socket.send_frame(3, frame.body).await.is_err() { break; }
-                                    }
+                                    },
                                     _ => {}
                                 },
                                 Err(_) => break,
@@ -373,7 +218,7 @@ impl DiscordIPC {
         Ok(())
     }
 
-    /// Checks whether the task is running through the internal atomic indicator flag.
+    /// Checks if the task is running.
     pub fn is_running(&self) -> bool {
         self.running.load(Ordering::SeqCst)
     }
@@ -413,15 +258,8 @@ impl DiscordIPC {
     }
 }
 
-/*
- *
- * Extension of DiscordIPCSocket
- * (for convenience)
- *
- */
-
 impl DiscordIPCSocket {
-    async fn send_activity(&mut self, activity: Activity, session_start: u64) -> Result<()> {
+    pub(crate) async fn send_activity(&mut self, activity: Activity, session_start: u64) -> Result<()> {
         let current_t = get_current_timestamp()?;
         let end_timestamp = activity.duration.map(|d| current_t + d.as_secs());
 
@@ -450,13 +288,13 @@ impl DiscordIPCSocket {
         Ok(())
     }
 
-    async fn clear_activity(&mut self) -> Result<()> {
+    pub(crate) async fn clear_activity(&mut self) -> Result<()> {
         let cmd = IPCActivityCmd::new_with(None);
         self.send_cmd(cmd).await?;
         Ok(())
     }
 
-    async fn do_handshake(&mut self, client_id: &str) -> Result<()> {
+    pub(crate) async fn do_handshake(&mut self, client_id: &str) -> Result<()> {
         let handshake = json!({ "v": 1, "client_id": client_id }).to_string();
         self.send_frame(0, handshake).await?;
         Ok(())
@@ -469,12 +307,6 @@ impl DiscordIPCSocket {
     }
 }
 
-/*
- *
- * Blocking implementation
- *
- */
-
 /// Blocking implementation of [`DiscordIPC`].
 pub struct DiscordIPCSync {
     inner: DiscordIPC,
@@ -482,7 +314,6 @@ pub struct DiscordIPCSync {
 }
 
 impl DiscordIPCSync {
-    /// Creates a new Discord IPC client instance.
     pub fn new(client_id: &str) -> Result<Self> {
         let rt = Builder::new_multi_thread().enable_all().build()?;
         let inner = DiscordIPC::new(client_id);
@@ -496,7 +327,7 @@ impl DiscordIPCSync {
         self
     }
 
-    /// The Discord client ID that has been used to initialize this IPC client instance.
+    /// Returns the client ID.
     pub fn client_id(&self) -> String {
         self.inner.client_id()
     }
@@ -513,7 +344,7 @@ impl DiscordIPCSync {
         self.rt.block_on(self.inner.wait())
     }
 
-    /// Checks whether the task is running through the internal atomic indicator flag.
+    /// Checks if the task is running.
     pub fn is_running(&self) -> bool {
         self.inner.is_running()
     }

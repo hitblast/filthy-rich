@@ -127,7 +127,7 @@ impl DiscordIPCSocket {
         Ok(())
     }
 
-    async fn write<T: AsRef<[u8]>>(&self, buffer: T) -> Result<()> {
+    pub async fn write<T: AsRef<[u8]>>(&self, buffer: T) -> Result<()> {
         acquire!(&self.writehalf, stream);
         stream.write_all(buffer.as_ref()).await?;
         Ok(())
