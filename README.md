@@ -90,7 +90,7 @@ Also, other implementations felt much more complex to me and also felt like they
 
 Thanks to the amazing contributors for adding to this repository:
 
-- [ParkBlake](https://github.com/ParkBlake)
+- [Sirokovsk](https://github.com/Sirokovsk)
 
 ## License
 
