@@ -39,6 +39,8 @@ async fn main() -> Result<()> {
 
 > [!WARNING]
 > This library is still a work-in-progress, so expect sudden breaking changes.
+>
+> All development work happens in the [Codeberg repository](https://codeberg.org/hitblast/filthy-rich); this GitHub mirror is primarily for *receiving* pull requests from the broader spectrum of the userbase.
 
 > [!NOTE]
 > Requires Rust 1.82.0 or later.
@@ -65,13 +67,13 @@ Examples are included with the project. See these:
 1. For an indefinitely running rich presence, [see this](./examples/indefinite.rs) (or see the [blocking/sync version](./examples/indefinite-sync.rs)).
 2. For an timed, changing rich presence, [see this](./examples/timed.rs) (or see the [blocking/sync version](./examples/timed-sync.rs)).
 
-You can also run them to see how they work.
+To run these:
 
 ```bash
 # First, clone and `cd` into the repository.
 git clone https://github.com/hitblast/filthy-rich && cd filthy-rich
 
-# Run any of the examples:
+# Now, run any of the examples:
 cargo run --example indefinite  # ex. 1
 cargo run --example timed  # ex. 2
 ```
