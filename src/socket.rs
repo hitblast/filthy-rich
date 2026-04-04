@@ -1,5 +1,3 @@
-// SPDX-License-Identifier: MIT
-
 use anyhow::{Result, bail};
 use serde_json::json;
 use std::collections::HashSet;

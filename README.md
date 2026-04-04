@@ -38,8 +38,6 @@ async fn main() -> Result<()> {
 ```
 
 > [!WARNING]
-> This library is still a work-in-progress, so expect sudden breaking changes.
->
 > All development work happens in the [Codeberg repository](https://codeberg.org/hitblast/filthy-rich); this GitHub mirror is primarily for *receiving* pull requests from the broader spectrum of the userbase.
 
 > [!NOTE]
@@ -57,15 +55,15 @@ cargo add filthy-rich
 - Fruitful `Activity` builder guaranteed to make you fall in love with setting presences.
 - Support for rich presence assets (large and small images with hover text).
 - Clean whilst being easy; properly handles Discord's responses.
-- Asynchronous and synchronous backends available according to your use case.
+- Fully asynchronous, but can be easily wrapped upon for synchronous compatibility.
 - Auto-reconnect on failure.
 
 ## Starter Snippets
 
 Examples are included with the project. See these:
 
-1. For an indefinitely running rich presence, [see this](./examples/indefinite.rs) (or see the [blocking/sync version](./examples/indefinite-sync.rs)).
-2. For an timed, changing rich presence, [see this](./examples/timed.rs) (or see the [blocking/sync version](./examples/timed-sync.rs)).
+1. For an indefinitely running rich presence, [see this](./examples/indefinite.rs).
+2. For an timed, changing rich presence, [see this](./examples/timed.rs).
 
 To run these:
 

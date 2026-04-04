@@ -1,5 +1,3 @@
-// SPDX-License-Identifier: MIT
-
 //! This is the API reference page for filthy-rich.
 //!
 //! ## Getting Started
