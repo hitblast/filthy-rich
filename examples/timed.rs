@@ -1,12 +1,12 @@
 use anyhow::Result;
 use std::time::Duration;
 
-use filthy_rich::{Activity, DiscordIPC};
+use filthy_rich::{Activity, DiscordIPCRunner};
 use tokio::time::sleep;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let mut client = DiscordIPC::new("1463450870480900160")
+    let mut runner = DiscordIPCRunner::new("1463450870480900160")
         .on_ready(|data| println!("Connected to user: {}", data.user.username));
 
     // create activities for later use
@@ -26,7 +26,7 @@ async fn main() -> Result<()> {
         .build();
 
     // first run
-    client.run(true).await?;
+    let client = runner.run(true).await?;
 
     client.set_activity(activity_1).await?;
     sleep(Duration::from_secs(5)).await;

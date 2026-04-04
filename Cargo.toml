@@ -1,9 +1,9 @@
 [package]
 name = "filthy-rich"
 description = "Tiny, ergonomic Discord Rich Presence library for your Rust apps."
-authors = ["Anindya Shiddhartha <@hitblast>"]
+authors = ["Anindya Shiddhartha <shiddhartha@tuta.io>"]
 repository = "https://github.com/hitblast/filthy-rich"
-version = "0.7.0"
+version = "0.8.0"
 edition = "2021"
 license = "MIT"
 keywords = ["discord", "discord", "rich-presence", "ipc", "rpc"]
@@ -15,10 +15,10 @@ name = "filthy_rich"
 path = "src/lib.rs"
 
 [dependencies]
-anyhow = "1.0.101"
+anyhow = "1.0.102"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
-tokio = { version = "1.49.0", features = ["full"] }
+tokio = { version = "1.51.0", features = ["full"] }
 uuid = { version = "1.20.0", features = ["v4"] }
 
 [lints.clippy]

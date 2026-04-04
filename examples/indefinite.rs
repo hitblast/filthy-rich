@@ -1,12 +1,12 @@
 use anyhow::Result;
-use filthy_rich::{Activity, DiscordIPC};
+use filthy_rich::{Activity, DiscordIPCRunner};
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let mut client = DiscordIPC::new("1463450870480900160")
+    let mut runner = DiscordIPCRunner::new("1463450870480900160")
         .on_ready(|data| println!("Connected to user: {}", data.user.username));
 
-    client.run(true).await?;
+    let client = runner.run(true).await?;
 
     let activity = Activity::new()
         .details("this runs forever")
@@ -15,7 +15,7 @@ async fn main() -> Result<()> {
         .build();
 
     client.set_activity(activity).await?;
-    client.wait().await?;
+    runner.wait().await?;
 
     Ok(())
 }

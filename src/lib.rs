@@ -13,13 +13,12 @@
 //!
 //! Library examples can be found in [this directory](https://github.com/hitblast/filthy-rich/tree/master/examples) on GitHub.
 
-mod ipc;
 mod client;
 mod runner;
-pub use types::{Activity, DiscordUser, ReadyData};
+pub(crate) mod utils;
 pub use client::DiscordIPCClient;
 pub use runner::DiscordIPCRunner;
-pub use ipc::{DiscordIPC, DiscordIPCSync};
+pub use types::{Activity, DiscordUser, ReadyData};
 
 mod socket;
 mod types;

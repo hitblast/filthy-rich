@@ -5,18 +5,14 @@ use std::{
     },
     time::Duration,
 };
-use tokio::{
-    sync::mpsc,
-    task::JoinHandle,
-    time::sleep,
-};
+use tokio::{sync::mpsc, task::JoinHandle, time::sleep};
 
 use anyhow::{Result, bail};
 
 use crate::{
+    Activity, DiscordIPCClient,
     socket::DiscordIPCSocket,
     types::{IPCCommand, ReadyData, RpcFrame},
-    Activity, DiscordIPCClient,
 };
 
 fn get_current_timestamp() -> Result<u64> {

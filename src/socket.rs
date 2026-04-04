@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 use anyhow::{Result, bail};
+use serde_json::json;
 use std::collections::HashSet;
 use std::env::var;
 use std::path::{Path, PathBuf};
@@ -21,6 +22,10 @@ use tokio::{
     io::{ReadHalf, WriteHalf},
     net::windows::named_pipe::{ClientOptions, NamedPipeClient},
 };
+
+use crate::Activity;
+use crate::types::{ActivityPayload, IPCActivityCmd, TimestampPayload};
+use crate::utils::get_current_timestamp;
 
 #[cfg(target_family = "windows")]
 type ReadHalfCore = ReadHalf<NamedPipeClient>;
@@ -173,6 +178,60 @@ impl DiscordIPCSocket {
 
         // on Windows, dropping the halves closes the NamedPipe
 
+        Ok(())
+    }
+}
+
+// convenience implementations for socket which are used inside the runner
+impl DiscordIPCSocket {
+    pub(crate) async fn send_activity(
+        &mut self,
+        activity: Activity,
+        session_start: u64,
+    ) -> Result<()> {
+        let current_t = get_current_timestamp()?;
+        let end_timestamp = activity.duration.map(|d| current_t + d.as_secs());
+
+        let assets = if activity.large_image_key.is_some() || activity.small_image_key.is_some() {
+            Some(crate::types::AssetsPayload {
+                large_image: activity.large_image_key,
+                large_text: activity.large_image_text,
+                small_image: activity.small_image_key,
+                small_text: activity.small_image_text,
+            })
+        } else {
+            None
+        };
+
+        let cmd = IPCActivityCmd::new_with(Some(ActivityPayload {
+            details: activity.details,
+            state: activity.state,
+            timestamps: TimestampPayload {
+                start: session_start,
+                end: end_timestamp,
+            },
+            assets,
+        }));
+
+        self.send_cmd(cmd).await?;
+        Ok(())
+    }
+
+    pub(crate) async fn clear_activity(&mut self) -> Result<()> {
+        let cmd = IPCActivityCmd::new_with(None);
+        self.send_cmd(cmd).await?;
+        Ok(())
+    }
+
+    pub(crate) async fn do_handshake(&mut self, client_id: &str) -> Result<()> {
+        let handshake = json!({ "v": 1, "client_id": client_id }).to_string();
+        self.send_frame(0, handshake).await?;
+        Ok(())
+    }
+
+    async fn send_cmd(&mut self, cmd: IPCActivityCmd) -> Result<()> {
+        let cmd = cmd.to_json()?;
+        self.send_frame(1, cmd).await?;
         Ok(())
     }
 }
