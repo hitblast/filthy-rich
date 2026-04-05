@@ -4,11 +4,11 @@ use std::sync::{
 };
 use tokio::sync::mpsc::Sender;
 
-use crate::types::IPCCommand;
 use crate::Activity;
+use crate::types::IPCCommand;
 
 /// A client handle for controlling Discord IPC.
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct DiscordIPCClient {
     pub(crate) tx: Sender<IPCCommand>,
     pub(crate) client_id: String,
