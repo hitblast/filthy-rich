@@ -13,13 +13,8 @@ use crate::{
     Activity, DiscordIPCClient,
     socket::DiscordIPCSocket,
     types::{IPCCommand, ReadyData, RpcFrame},
+    utils::get_current_timestamp,
 };
-
-fn get_current_timestamp() -> Result<u64> {
-    Ok(std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)?
-        .as_secs())
-}
 
 /// A runner that manages the Discord IPC background task.
 /// Create a runner, configure it, run it to get a client handle, then clone the handle for sharing.
