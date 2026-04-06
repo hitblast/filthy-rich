@@ -160,7 +160,12 @@ impl ActivityBuilder {
 impl ActivityWithDetails {
     /// Bottom text for your activity.
     pub fn state(mut self, state: impl Into<String>) -> Self {
-        self.state = Some(state.into());
+        let state: String = state.into();
+
+        if !state.is_empty() {
+            self.state = Some(state);
+        }
+
         self
     }
 
