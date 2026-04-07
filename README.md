@@ -39,7 +39,7 @@ async fn main() -> Result<()> {
 ```
 
 > [!WARNING]
-> All development work happens in the [Codeberg repository](https://codeberg.org/hitblast/filthy-rich); this GitHub mirror is primarily for *receiving* pull requests from the broader spectrum of the userbase.
+> All development work happens in the [Codeberg repository](https://codeberg.org/hitblast/filthy-rich); the GitHub mirror is primarily for *receiving* pull requests from the broader spectrum of the userbase.
 
 > [!NOTE]
 > Requires Rust 1.82.0 or later.
