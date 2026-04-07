@@ -15,13 +15,12 @@
 ```rust
 // a sneak-peek into what you'll be working with
 // this usually helps me personally when looking at libraries
+use anyhow::Result;
+use filthy_rich::{Activity, DiscordIPCRunner};
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let mut client = DiscordIPC::new("1463450870480900160")
-        .on_ready(|data| println!("Connected to: {}", data.user.username));
-
-    client.run(true).await?;
+    let mut runner = DiscordIPCRunner::new("1463450870480900160");
 
     let activity = Activity::new()
         .details("Playing a game")
@@ -30,11 +29,13 @@ async fn main() -> Result<()> {
         .small_image("status", Some("Online"))
         .build();
 
+    let client = runner.run(true).await?;
     client.set_activity(activity).await?;
-    client.wait().await?;
+    runner.wait().await?;
 
     Ok(())
 }
+
 ```
 
 > [!WARNING]
