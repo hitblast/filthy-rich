@@ -33,6 +33,7 @@ impl PresenceRunner {
             client_id: client_id.to_string(),
             running: Arc::new(AtomicBool::new(false)),
         };
+
         Self {
             rx: Some(rx),
             client,
