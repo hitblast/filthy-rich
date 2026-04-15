@@ -54,9 +54,9 @@ cargo add filthy-rich
 
 - Really easy to implement; just create a client ID at the [Discord Developer Portal](https://discord.com/developers) and you're good to go.
 - Fruitful `Activity` builder guaranteed to make you fall in love with setting presences.
-- Support for rich presence assets (large and small images with hover text).
 - Clean whilst being easy; properly handles Discord's responses.
-- Fully asynchronous, but can be easily wrapped upon for synchronous compatibility.
+- Fully asynchronous but easily wrappable for synchronous usage.
+- Client-runner architecture for easy-adding in state-driven GUI apps or games.
 - Auto-reconnect on failure.
 
 ## Starter Snippets
@@ -65,6 +65,7 @@ Examples are included with the project. See these:
 
 1. For an indefinitely running rich presence, [see this](./examples/indefinite.rs).
 2. For an timed, changing rich presence, [see this](./examples/timed.rs).
+3. For a very simple snippet, [see this](./examples/simple.rs).
 
 To run these:
 
@@ -75,6 +76,7 @@ git clone https://github.com/hitblast/filthy-rich && cd filthy-rich
 # Now, run any of the examples:
 cargo run --example indefinite  # ex. 1
 cargo run --example timed  # ex. 2
+cargo run --example simple  # ex. 3
 ```
 
 ## API Reference (docs.rs)
