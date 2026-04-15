@@ -16,7 +16,6 @@ mod runner;
 pub(crate) mod utils;
 pub use client::DiscordIPCClient;
 pub use runner::DiscordIPCRunner;
-pub use types::{Activity, DiscordUser, ReadyData};
 
 mod socket;
-mod types;
+pub mod types;

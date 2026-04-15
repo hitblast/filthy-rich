@@ -21,8 +21,7 @@ use tokio::{
     net::windows::named_pipe::{ClientOptions, NamedPipeClient},
 };
 
-use crate::Activity;
-use crate::types::{ActivityPayload, IPCActivityCmd, TimestampPayload};
+use crate::types::{Activity, ActivityPayload, IPCActivityCmd, TimestampPayload};
 use crate::utils::get_current_timestamp;
 
 #[cfg(target_family = "windows")]
@@ -201,7 +200,15 @@ impl DiscordIPCSocket {
             None
         };
 
+        let status_display_type: Option<u8> = if let Some(s) = activity.status_display_type {
+            Some(s.into())
+        } else {
+            None
+        };
+
         let cmd = IPCActivityCmd::new_with(Some(ActivityPayload {
+            activity_type: activity.activity_type.into(),
+            status_display_type,
             details: activity.details,
             state: activity.state,
             timestamps: TimestampPayload {

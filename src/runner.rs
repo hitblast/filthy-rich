@@ -10,9 +10,9 @@ use tokio::{sync::mpsc, task::JoinHandle, time::sleep};
 use anyhow::{Result, bail};
 
 use crate::{
-    Activity, DiscordIPCClient,
+    DiscordIPCClient,
     socket::DiscordIPCSocket,
-    types::{IPCCommand, ReadyData, RpcFrame},
+    types::{Activity, IPCCommand, ReadyData, RpcFrame},
     utils::get_current_timestamp,
 };
 

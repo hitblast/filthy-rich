@@ -1,7 +1,7 @@
 use anyhow::Result;
 use std::time::Duration;
 
-use filthy_rich::{Activity, DiscordIPCRunner};
+use filthy_rich::{DiscordIPCRunner, types::Activity};
 use tokio::time::sleep;
 
 #[tokio::main]

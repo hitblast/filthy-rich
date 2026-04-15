@@ -4,8 +4,7 @@ use std::sync::{
 };
 use tokio::sync::mpsc::Sender;
 
-use crate::Activity;
-use crate::types::IPCCommand;
+use crate::types::{Activity, IPCCommand};
 
 /// A client handle for controlling Discord IPC.
 #[derive(Debug, Clone)]

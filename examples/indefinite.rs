@@ -1,5 +1,5 @@
 use anyhow::Result;
-use filthy_rich::{Activity, DiscordIPCRunner};
+use filthy_rich::{DiscordIPCRunner, types::Activity};
 
 #[tokio::main]
 async fn main() -> Result<()> {
