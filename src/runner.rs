@@ -70,9 +70,8 @@ impl PresenceRunner {
             let mut backoff = 1;
             let mut last_activity: Option<Activity> = None;
             let mut ready_tx = Some(ready_tx);
-            let mut should_continue = true;
 
-            while should_continue && running.load(Ordering::SeqCst) {
+            'outer: while running.load(Ordering::SeqCst) {
                 // initial connect
                 let mut socket = match DiscordSock::new().await {
                     Ok(s) => s,
@@ -92,7 +91,6 @@ impl PresenceRunner {
                     let frame = match socket.read_frame().await {
                         Ok(f) => f,
                         Err(_) => {
-                            should_continue = true;
                             break;
                         }
                     };
@@ -149,8 +147,7 @@ impl PresenceRunner {
                                 IPCCommand::Close => {
                                     let _ = socket.close().await;
                                     running.store(false, Ordering::SeqCst);
-                                    should_continue = false;
-                                    break;
+                                    break 'outer;
                                 }
                             }
                         }
