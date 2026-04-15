@@ -1,20 +1,20 @@
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, bail};
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 use uuid::Uuid;
 
-#[derive(Debug, Deserialize, Serialize)]
-pub(crate) struct IPCActivityCmd {
+#[derive(Debug, Serialize)]
+pub(crate) struct ActivityCommandPayload {
     cmd: String,
-    args: IPCActivityCmdArgs,
+    args: ActivityCommandPayloadArgs,
     nonce: String,
 }
 
-impl IPCActivityCmd {
+impl ActivityCommandPayload {
     pub fn new_with(activity: Option<ActivityPayload>) -> Self {
         Self {
             cmd: "SET_ACTIVITY".to_string(),
-            args: IPCActivityCmdArgs {
+            args: ActivityCommandPayloadArgs {
                 pid: std::process::id(),
                 activity,
             },
@@ -27,15 +27,18 @@ impl IPCActivityCmd {
     }
 }
 
-#[derive(Debug, Deserialize, Serialize)]
-struct IPCActivityCmdArgs {
+#[derive(Debug, Serialize)]
+struct ActivityCommandPayloadArgs {
     pid: u32,
     activity: Option<ActivityPayload>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+/// Payload that actually gets serialized for setting a rich presence activity.
+///
+/// Reference: https://docs.discord.com/developers/events/gateway-events#activity-object
+#[derive(Debug, Serialize)]
 pub(crate) struct ActivityPayload {
-    pub activity_type: u8,
+    pub r#type: u8,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status_display_type: Option<u8>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -100,25 +103,6 @@ pub struct DiscordUser {
     pub premium_type: Option<u64>,
 }
 
-/// Represents a Discord Rich Presence activity.
-#[derive(Debug, Clone)]
-pub struct Activity {
-    pub(crate) activity_type: ActivityType,
-    pub(crate) status_display_type: Option<StatusDisplayType>,
-    pub(crate) details: Option<String>,
-    pub(crate) state: Option<String>,
-    pub(crate) duration: Option<Duration>,
-    pub(crate) large_image_key: Option<String>,
-    pub(crate) large_image_text: Option<String>,
-    pub(crate) small_image_key: Option<String>,
-    pub(crate) small_image_text: Option<String>,
-}
-
-/// The initial builder for [`Activity`].
-pub struct ActivityBuilder {
-    activity_type: ActivityType,
-}
-
 /// Enum indicating the activity type.
 #[repr(u8)]
 #[derive(Clone, Debug, Eq, PartialEq, Copy)]
@@ -150,29 +134,27 @@ impl From<StatusDisplayType> for u8 {
     }
 }
 
+/// Represents a Discord Rich Presence activity.
+#[derive(Debug, Clone)]
+pub struct Activity {
+    pub(crate) activity_type: ActivityType,
+    pub(crate) status_display_type: Option<StatusDisplayType>,
+    pub(crate) details: Option<String>,
+    pub(crate) state: Option<String>,
+    pub(crate) duration: Option<Duration>,
+    pub(crate) large_image_key: Option<String>,
+    pub(crate) large_image_text: Option<String>,
+    pub(crate) small_image_key: Option<String>,
+    pub(crate) small_image_text: Option<String>,
+}
+
 impl Activity {
     /// Initializes a new activity builder instance.
     pub fn new() -> ActivityBuilder {
         ActivityBuilder {
             activity_type: ActivityType::Playing,
-        }
-    }
-
-    /// Initializes a new activity builder instance with a custom activity type.
-    pub fn new_with_type(r#type: ActivityType) -> ActivityBuilder {
-        ActivityBuilder {
-            activity_type: r#type,
-        }
-    }
-}
-
-impl ActivityBuilder {
-    /// Top text for your activity.
-    pub fn details(self, details: impl Into<String>) -> ActivityBuilderWithDetails {
-        ActivityBuilderWithDetails {
-            activity_type: self.activity_type,
             status_display_type: None,
-            details: details.into(),
+            details: None,
             state: None,
             duration: None,
             large_image_key: None,
@@ -182,11 +164,10 @@ impl ActivityBuilder {
         }
     }
 
-    /// Builds an [`Activity`] with empty fields, except the activity type, which can either
-    /// be developer-defined or the default one.
-    pub fn build_empty(self) -> Activity {
-        Activity {
-            activity_type: self.activity_type,
+    /// Initializes a new activity builder instance with a custom activity type.
+    pub fn new_with_type(r#type: ActivityType) -> ActivityBuilder {
+        ActivityBuilder {
+            activity_type: r#type,
             status_display_type: None,
             details: None,
             state: None,
@@ -202,10 +183,10 @@ impl ActivityBuilder {
 /// A Rich Presence activity with top text and possibly more attributes.
 /// [`ActivityBuilderWithDetails::build`] needs to be called on it in order to
 /// turn it into a proper [`Activity`] instance.
-pub struct ActivityBuilderWithDetails {
+pub struct ActivityBuilder {
     activity_type: ActivityType,
     status_display_type: Option<StatusDisplayType>,
-    details: String,
+    details: Option<String>,
     state: Option<String>,
     duration: Option<Duration>,
     large_image_key: Option<String>,
@@ -214,22 +195,50 @@ pub struct ActivityBuilderWithDetails {
     small_image_text: Option<String>,
 }
 
-impl ActivityBuilderWithDetails {
-    /// Bottom text for your activity.
-    pub fn state(mut self, state: impl Into<String>) -> Self {
-        let state: String = state.into();
+impl ActivityBuilder {
+    /// Top text for your activity.
+    pub fn details(mut self, text: impl Into<String>) -> Self {
+        let text: String = text.into();
 
-        if !state.is_empty() {
-            self.state = Some(state);
+        if !text.is_empty() {
+            self.details = Some(text);
+        }
+
+        self
+    }
+
+    /// Bottom text for your activity.
+    pub fn state(mut self, text: impl Into<String>) -> Self {
+        let text: String = text.into();
+
+        if !text.is_empty() {
+            self.state = Some(text);
         }
 
         self
     }
 
     /// The status display type for the activity.
-    pub fn status_display_type(mut self, r#type: StatusDisplayType) -> Self {
+    ///
+    /// Errors:
+    ///     Can error if `state` is missing and [`StatusDisplayType::State`] has been passed as the type.
+    pub fn status_display_type(mut self, r#type: StatusDisplayType) -> Result<Self> {
+        match r#type {
+            StatusDisplayType::State => {
+                if self.state.is_none() {
+                    bail!("Cannot set status display type as state if state itself is empty.")
+                }
+            }
+            StatusDisplayType::Details => {
+                if self.details.is_none() {
+                    bail!("Cannot set status display type as details if details itself is empty.")
+                }
+            }
+            _ => {}
+        }
+
         self.status_display_type = Some(r#type);
-        self
+        Ok(self)
     }
 
     /// Countdown duration for your activity.
@@ -258,7 +267,7 @@ impl ActivityBuilderWithDetails {
         Activity {
             activity_type: self.activity_type,
             status_display_type: self.status_display_type,
-            details: Some(self.details),
+            details: self.details,
             state: self.state,
             duration: self.duration,
             large_image_key: self.large_image_key,

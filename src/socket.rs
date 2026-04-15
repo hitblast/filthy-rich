@@ -21,7 +21,7 @@ use tokio::{
     net::windows::named_pipe::{ClientOptions, NamedPipeClient},
 };
 
-use crate::types::{Activity, ActivityPayload, IPCActivityCmd, TimestampPayload};
+use crate::types::{Activity, ActivityCommandPayload, ActivityPayload, TimestampPayload};
 use crate::utils::get_current_timestamp;
 
 #[cfg(target_family = "windows")]
@@ -179,7 +179,6 @@ impl DiscordIPCSocket {
     }
 }
 
-// convenience implementations for socket which are used inside the runner
 impl DiscordIPCSocket {
     pub(crate) async fn send_activity(
         &mut self,
@@ -206,8 +205,8 @@ impl DiscordIPCSocket {
             None
         };
 
-        let cmd = IPCActivityCmd::new_with(Some(ActivityPayload {
-            activity_type: activity.activity_type.into(),
+        let cmd = ActivityCommandPayload::new_with(Some(ActivityPayload {
+            r#type: activity.activity_type.into(),
             status_display_type,
             details: activity.details,
             state: activity.state,
@@ -223,7 +222,7 @@ impl DiscordIPCSocket {
     }
 
     pub(crate) async fn clear_activity(&mut self) -> Result<()> {
-        let cmd = IPCActivityCmd::new_with(None);
+        let cmd = ActivityCommandPayload::new_with(None);
         self.send_cmd(cmd).await?;
         Ok(())
     }
@@ -234,7 +233,7 @@ impl DiscordIPCSocket {
         Ok(())
     }
 
-    async fn send_cmd(&mut self, cmd: IPCActivityCmd) -> Result<()> {
+    async fn send_cmd(&mut self, cmd: ActivityCommandPayload) -> Result<()> {
         let cmd = cmd.to_json()?;
         self.send_frame(1, cmd).await?;
         Ok(())
