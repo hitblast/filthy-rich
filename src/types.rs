@@ -43,6 +43,7 @@ pub(crate) struct ActivityPayload {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     pub r#type: u8,
+    pub created_at: u64,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status_display_type: Option<u8>,
     #[serde(skip_serializing_if = "Option::is_none")]

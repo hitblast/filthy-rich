@@ -119,7 +119,7 @@ impl DiscordSock {
                 readhalf: Arc::new(Mutex::new(readhalf)),
                 writehalf: Arc::new(Mutex::new(writehalf)),
             }),
-            Err(e) => bail!("Error while creating new IPC client: {e}"),
+            Err(e) => bail!("Error while creating new IPC RPC socket: {e}"),
         }
     }
 
@@ -199,16 +199,11 @@ impl DiscordSock {
             None
         };
 
-        let status_display_type: Option<u8> = if let Some(s) = activity.status_display_type {
-            Some(s.into())
-        } else {
-            None
-        };
-
         let cmd = ActivityCommandPayload::new_with(Some(ActivityPayload {
             name: activity.name,
             r#type: activity.activity_type.into(),
-            status_display_type,
+            created_at: current_t,
+            status_display_type: activity.status_display_type.map(|f| f.into()),
             details: activity.details,
             state: activity.state,
             timestamps: TimestampPayload {

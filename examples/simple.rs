@@ -6,9 +6,9 @@ async fn main() -> Result<()> {
     let mut runner = PresenceRunner::new("1463450870480900160");
 
     let activity = Activity::new()
-        .name("test")
-        .details("Some thing?")
-        .state("bad")
+        .name("cool app name")
+        .details("Something?")
+        .state("Probably~")
         .build();
 
     let client = runner.run(true).await?;

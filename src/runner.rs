@@ -130,25 +130,32 @@ impl PresenceRunner {
 
                 loop {
                     tokio::select! {
-                        Some(cmd) = rx.recv() => {
-                            match cmd {
-                                IPCCommand::SetActivity { activity } => {
-                                    last_activity = Some(activity.clone());
+                        biased;
 
-                                    if socket.send_activity(activity, session_start).await.is_err() {
-                                        break;
+                        cmd = rx.recv() => {
+                            match cmd {
+                                Some(cmd) => {
+                                    match cmd {
+                                        IPCCommand::SetActivity { activity } => {
+                                            last_activity = Some(activity.clone());
+
+                                            if socket.send_activity(activity, session_start).await.is_err() {
+                                                break;
+                                            }
+                                        },
+                                        IPCCommand::ClearActivity => {
+                                            last_activity = None;
+
+                                            if socket.clear_activity().await.is_err() { break; }
+                                        },
+                                        IPCCommand::Close => {
+                                            let _ = socket.close().await;
+                                            running.store(false, Ordering::SeqCst);
+                                            break 'outer;
+                                        }
                                     }
                                 },
-                                IPCCommand::ClearActivity => {
-                                    last_activity = None;
-
-                                    if socket.clear_activity().await.is_err() { break; }
-                                },
-                                IPCCommand::Close => {
-                                    let _ = socket.close().await;
-                                    running.store(false, Ordering::SeqCst);
-                                    break 'outer;
-                                }
+                                None => break,
                             }
                         }
 
