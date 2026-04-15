@@ -206,6 +206,7 @@ impl DiscordIPCSocket {
         };
 
         let cmd = ActivityCommandPayload::new_with(Some(ActivityPayload {
+            name: activity.name,
             r#type: activity.activity_type.into(),
             status_display_type,
             details: activity.details,

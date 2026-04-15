@@ -40,6 +40,8 @@ struct ActivityCommandPayloadArgs {
 /// Reference: https://docs.discord.com/developers/events/gateway-events#activity-object
 #[derive(Debug, Serialize)]
 pub(crate) struct ActivityPayload {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
     pub r#type: u8,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status_display_type: Option<u8>,
@@ -139,6 +141,7 @@ impl From<StatusDisplayType> for u8 {
 /// Represents a Discord Rich Presence activity.
 #[derive(Debug, Clone)]
 pub struct Activity {
+    pub(crate) name: Option<String>,
     pub(crate) activity_type: ActivityType,
     pub(crate) status_display_type: Option<StatusDisplayType>,
     pub(crate) details: Option<String>,
@@ -247,6 +250,7 @@ impl ActivityBuilder {
     /// or [`DiscordIPCSync::set_activity`].
     pub fn build(self) -> Activity {
         Activity {
+            name: self.name,
             activity_type: self.activity_type,
             status_display_type: self.status_display_type,
             details: self.details,
