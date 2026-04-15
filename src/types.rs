@@ -181,8 +181,7 @@ impl Activity {
 }
 
 /// A Rich Presence activity with top text and possibly more attributes.
-/// [`ActivityBuilderWithDetails::build`] needs to be called on it in order to
-/// turn it into a proper [`Activity`] instance.
+/// To build an [`Activity`] out of it, use [`ActivityBuilder::build`].
 pub struct ActivityBuilder {
     activity_type: ActivityType,
     status_display_type: Option<StatusDisplayType>,
