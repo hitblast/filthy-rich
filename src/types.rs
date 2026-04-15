@@ -54,7 +54,7 @@ pub(crate) struct ActivityPayload {
     pub assets: Option<AssetsPayload>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Serialize)]
 pub(crate) struct AssetsPayload {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub large_image: Option<String>,
@@ -66,7 +66,7 @@ pub(crate) struct AssetsPayload {
     pub small_text: Option<String>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Serialize)]
 pub(crate) struct TimestampPayload {
     pub start: u64,
     #[serde(skip_serializing_if = "Option::is_none")]
