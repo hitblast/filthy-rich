@@ -1,7 +1,9 @@
-use anyhow::{Context, Result, bail};
+use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 use uuid::Uuid;
+
+use crate::utils::filter_none_string;
 
 #[derive(Debug, Serialize)]
 pub(crate) struct ActivityCommandPayload {
@@ -151,38 +153,14 @@ pub struct Activity {
 impl Activity {
     /// Initializes a new activity builder instance.
     pub fn new() -> ActivityBuilder {
-        ActivityBuilder {
-            activity_type: ActivityType::Playing,
-            status_display_type: None,
-            details: None,
-            state: None,
-            duration: None,
-            large_image_key: None,
-            large_image_text: None,
-            small_image_key: None,
-            small_image_text: None,
-        }
-    }
-
-    /// Initializes a new activity builder instance with a custom activity type.
-    pub fn new_with_type(r#type: ActivityType) -> ActivityBuilder {
-        ActivityBuilder {
-            activity_type: r#type,
-            status_display_type: None,
-            details: None,
-            state: None,
-            duration: None,
-            large_image_key: None,
-            large_image_text: None,
-            small_image_key: None,
-            small_image_text: None,
-        }
+        ActivityBuilder::default()
     }
 }
 
 /// A Rich Presence activity with top text and possibly more attributes.
 /// To build an [`Activity`] out of it, use [`ActivityBuilder::build`].
 pub struct ActivityBuilder {
+    name: Option<String>,
     activity_type: ActivityType,
     status_display_type: Option<StatusDisplayType>,
     details: Option<String>,
@@ -194,26 +172,45 @@ pub struct ActivityBuilder {
     small_image_text: Option<String>,
 }
 
+impl Default for ActivityBuilder {
+    fn default() -> Self {
+        Self {
+            name: None,
+            activity_type: ActivityType::Playing,
+            status_display_type: None,
+            details: None,
+            state: None,
+            duration: None,
+            large_image_key: None,
+            large_image_text: None,
+            small_image_key: None,
+            small_image_text: None,
+        }
+    }
+}
+
 impl ActivityBuilder {
+    /// Name of the activity.
+    pub fn name(mut self, text: impl Into<String>) -> Self {
+        self.name = filter_none_string(text);
+        self
+    }
+
+    /// The type of activity you want to create.
+    pub fn activity_type(mut self, r#type: ActivityType) -> Self {
+        self.activity_type = r#type;
+        self
+    }
+
     /// Top text for your activity.
     pub fn details(mut self, text: impl Into<String>) -> Self {
-        let text: String = text.into();
-
-        if !text.is_empty() {
-            self.details = Some(text);
-        }
-
+        self.details = filter_none_string(text);
         self
     }
 
     /// Bottom text for your activity.
     pub fn state(mut self, text: impl Into<String>) -> Self {
-        let text: String = text.into();
-
-        if !text.is_empty() {
-            self.state = Some(text);
-        }
-
+        self.state = filter_none_string(text);
         self
     }
 
@@ -221,23 +218,9 @@ impl ActivityBuilder {
     ///
     /// Errors:
     ///     Can error if `state` is missing and [`StatusDisplayType::State`] has been passed as the type.
-    pub fn status_display_type(mut self, r#type: StatusDisplayType) -> Result<Self> {
-        match r#type {
-            StatusDisplayType::State => {
-                if self.state.is_none() {
-                    bail!("Cannot set status display type as state if state itself is empty.")
-                }
-            }
-            StatusDisplayType::Details => {
-                if self.details.is_none() {
-                    bail!("Cannot set status display type as details if details itself is empty.")
-                }
-            }
-            _ => {}
-        }
-
+    pub fn status_display_type(mut self, r#type: StatusDisplayType) -> Self {
         self.status_display_type = Some(r#type);
-        Ok(self)
+        self
     }
 
     /// Countdown duration for your activity.

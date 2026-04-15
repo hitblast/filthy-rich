@@ -11,9 +11,10 @@ async fn main() -> Result<()> {
 
     let client = runner.run(true).await?;
 
-    let activity = Activity::new_with_type(ActivityType::Competing)
+    let activity = Activity::new()
+        .activity_type(ActivityType::Competing)
         .details("epic game")
-        .status_display_type(StatusDisplayType::Details)?
+        .status_display_type(StatusDisplayType::Details)
         .large_image("game_icon", Some("Playing a game"))
         .small_image("status", Some("Online"))
         .build();
