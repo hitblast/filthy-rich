@@ -4,8 +4,8 @@
 //!
 //! Please refer to either of these two structs for implementing Rich Presence functionality in your app:
 //!
-//! [`DiscordIPC`] - for async projects.<br>
-//! [`DiscordIPCSync`] - for sync projects.
+//! [`PresenceRunner`] - core runner for rich presence<br>
+//! [`PresenceClient`] - client/messenger instance used for sending activity and closing updates
 //!
 //! ## Examples
 //!
@@ -13,9 +13,9 @@
 
 mod client;
 mod runner;
-pub(crate) mod utils;
-pub use client::DiscordIPCClient;
-pub use runner::DiscordIPCRunner;
-
 mod socket;
+mod utils;
+
+pub use client::PresenceClient;
+pub use runner::PresenceRunner;
 pub mod types;

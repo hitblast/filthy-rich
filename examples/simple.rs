@@ -1,9 +1,9 @@
 use anyhow::Result;
-use filthy_rich::{DiscordIPCRunner, types::Activity};
+use filthy_rich::{PresenceRunner, types::Activity};
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let mut runner = DiscordIPCRunner::new("1463450870480900160");
+    let mut runner = PresenceRunner::new("1463450870480900160");
 
     let activity = Activity::new()
         .name("test")

@@ -10,25 +10,25 @@ use tokio::{sync::mpsc, task::JoinHandle, time::sleep};
 use anyhow::{Result, bail};
 
 use crate::{
-    DiscordIPCClient,
-    socket::DiscordIPCSocket,
+    PresenceClient,
+    socket::DiscordSock,
     types::{Activity, IPCCommand, ReadyData, RpcFrame},
     utils::get_current_timestamp,
 };
 
-/// A runner that manages the Discord IPC background task.
+/// A runner that manages the Discord RPC background task.
 /// Create a runner, configure it, run it to get a client handle, then clone the handle for sharing.
-pub struct DiscordIPCRunner {
+pub struct PresenceRunner {
     rx: Option<tokio::sync::mpsc::Receiver<IPCCommand>>,
-    client: DiscordIPCClient,
+    client: PresenceClient,
     join_handle: Option<JoinHandle<Result<()>>>,
     on_ready: Option<Box<dyn Fn(ReadyData) + Send + Sync + 'static>>,
 }
 
-impl DiscordIPCRunner {
+impl PresenceRunner {
     pub fn new(client_id: &str) -> Self {
         let (tx, rx) = mpsc::channel(32);
-        let client = DiscordIPCClient {
+        let client = PresenceClient {
             tx,
             client_id: client_id.to_string(),
             running: Arc::new(AtomicBool::new(false)),
@@ -49,10 +49,10 @@ impl DiscordIPCRunner {
 
     /// Run the runner.
     /// Must be called before any client handle operations.
-    pub async fn run(&mut self, wait_for_ready: bool) -> Result<&DiscordIPCClient> {
+    pub async fn run(&mut self, wait_for_ready: bool) -> Result<&PresenceClient> {
         if self.client.running.swap(true, Ordering::SeqCst) {
             bail!(
-                "Cannot run multiple instances of .run() for DiscordIPCRunner, or when a session is still closing."
+                "Cannot run multiple instances of .run() for PresenceRunner, or when a session is still closing."
             )
         }
 
@@ -73,7 +73,7 @@ impl DiscordIPCRunner {
 
             while should_continue && running.load(Ordering::SeqCst) {
                 // initial connect
-                let mut socket = match DiscordIPCSocket::new().await {
+                let mut socket = match DiscordSock::new().await {
                     Ok(s) => s,
                     Err(_) => {
                         sleep(Duration::from_secs(backoff)).await;
@@ -196,7 +196,7 @@ impl DiscordIPCRunner {
     }
 
     /// Returns a clone of the client handle for sharing.
-    pub fn clone_handle(&self) -> DiscordIPCClient {
+    pub fn clone_handle(&self) -> PresenceClient {
         self.client.clone()
     }
 

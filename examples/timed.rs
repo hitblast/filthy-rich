@@ -1,12 +1,12 @@
 use anyhow::Result;
 use std::time::Duration;
 
-use filthy_rich::{DiscordIPCRunner, types::Activity};
+use filthy_rich::{PresenceRunner, types::Activity};
 use tokio::time::sleep;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let mut runner = DiscordIPCRunner::new("1463450870480900160")
+    let mut runner = PresenceRunner::new("1463450870480900160")
         .on_ready(|data| println!("Connected to user: {}", data.user.username));
 
     // create activities for later use

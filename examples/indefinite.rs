@@ -1,12 +1,12 @@
 use anyhow::Result;
 use filthy_rich::{
-    DiscordIPCRunner,
+    PresenceRunner,
     types::{Activity, ActivityType, StatusDisplayType},
 };
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let mut runner = DiscordIPCRunner::new("1463450870480900160")
+    let mut runner = PresenceRunner::new("1463450870480900160")
         .on_ready(|data| println!("Connected to user: {}", data.user.username));
 
     let client = runner.run(true).await?;

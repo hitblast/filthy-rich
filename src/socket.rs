@@ -77,12 +77,12 @@ fn get_pipe_path() -> Option<PathBuf> {
 }
 
 #[derive(Debug)]
-pub struct DiscordIPCSocket {
+pub struct DiscordSock {
     readhalf: Arc<Mutex<ReadHalfCore>>,
     writehalf: Arc<Mutex<WriteHalfCore>>,
 }
 
-impl DiscordIPCSocket {
+impl DiscordSock {
     #[cfg(target_os = "windows")]
     async fn get_socket() -> Result<(ReadHalfCore, WriteHalfCore)> {
         let path = match get_pipe_path() {
@@ -179,7 +179,7 @@ impl DiscordIPCSocket {
     }
 }
 
-impl DiscordIPCSocket {
+impl DiscordSock {
     pub(crate) async fn send_activity(
         &mut self,
         activity: Activity,

@@ -8,13 +8,13 @@ use crate::types::{Activity, IPCCommand};
 
 /// A client handle for controlling Discord IPC.
 #[derive(Debug, Clone)]
-pub struct DiscordIPCClient {
+pub struct PresenceClient {
     pub(crate) tx: Sender<IPCCommand>,
     pub(crate) client_id: String,
     pub(crate) running: Arc<AtomicBool>,
 }
 
-impl DiscordIPCClient {
+impl PresenceClient {
     /// Returns the client ID.
     pub fn client_id(&self) -> String {
         self.client_id.clone()

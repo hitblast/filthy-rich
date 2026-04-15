@@ -16,11 +16,11 @@
 // a sneak-peek into what you'll be working with
 // this usually helps me personally when looking at libraries
 use anyhow::Result;
-use filthy_rich::{Activity, DiscordIPCRunner};
+use filthy_rich::{Activity, PresenceRunner};
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let mut runner = DiscordIPCRunner::new("1463450870480900160");
+    let mut runner = PresenceRunner::new("1463450870480900160");
 
     let activity = Activity::new()
         .details("Playing a game")

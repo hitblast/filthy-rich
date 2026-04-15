@@ -246,8 +246,7 @@ impl ActivityBuilder {
         self
     }
 
-    /// Parses the state of this builder into a usable [`Activity`] for you to pass through either [`DiscordIPC::set_activity`]
-    /// or [`DiscordIPCSync::set_activity`].
+    /// Parses the state of this builder into a usable [`Activity`] for you to pass through [`PresenceClient::set_activity`].
     pub fn build(self) -> Activity {
         Activity {
             name: self.name,
