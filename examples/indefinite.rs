@@ -20,6 +20,8 @@ async fn main() -> Result<()> {
         .build();
 
     client.set_activity(activity).await?;
+
+    // indefinitely block here
     runner.wait().await?;
 
     Ok(())

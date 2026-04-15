@@ -101,6 +101,7 @@ pub struct DiscordUser {
     pub global_name: Option<String>,
     pub discriminator: Option<String>,
     pub avatar: Option<String>,
+    // TODO: extend this into a deserializable struct (probably?)
     pub avatar_decoration_data: Option<serde_json::Value>,
     pub bot: bool,
     pub flags: Option<u64>,

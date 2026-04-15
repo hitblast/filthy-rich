@@ -13,6 +13,8 @@ async fn main() -> Result<()> {
 
     let client = runner.run(true).await?;
     client.set_activity(activity).await?;
+
+    // indefinitely block here
     runner.wait().await?;
 
     Ok(())
