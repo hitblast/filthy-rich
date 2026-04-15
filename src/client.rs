@@ -6,7 +6,7 @@ use tokio::sync::mpsc::Sender;
 
 use crate::types::{Activity, IPCCommand};
 
-/// A client handle for controlling Discord IPC.
+/// A client handle for communicating with the [`PresenceRunner`]'s inner loop.
 #[derive(Debug, Clone)]
 pub struct PresenceClient {
     pub(crate) tx: Sender<IPCCommand>,
