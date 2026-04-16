@@ -87,7 +87,7 @@ impl DiscordSock {
     async fn get_socket() -> Result<(ReadHalfCore, WriteHalfCore)> {
         let path = match get_pipe_path() {
             Some(p) => p,
-            None => return bail!("Pipe not found."),
+            None => bail!("Pipe not found."),
         };
         if let Ok(client) = ClientOptions::new().open(&path) {
             let (read_half, write_half) = tokio::io::split(client);
