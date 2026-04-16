@@ -1,22 +1,22 @@
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
-use std::time::Duration;
+use std::{collections::HashMap, time::Duration};
 use uuid::Uuid;
 
 use crate::utils::filter_none_string;
 
 #[derive(Debug, Serialize)]
-pub(crate) struct ActivityCommandPayload {
+pub(crate) struct ActivityCommand {
     cmd: String,
-    args: ActivityCommandPayloadArgs,
+    args: ActivityCommandArgs,
     nonce: String,
 }
 
-impl ActivityCommandPayload {
+impl ActivityCommand {
     pub fn new_with(activity: Option<ActivityPayload>) -> Self {
         Self {
             cmd: "SET_ACTIVITY".to_string(),
-            args: ActivityCommandPayloadArgs {
+            args: ActivityCommandArgs {
                 pid: std::process::id(),
                 activity,
             },
@@ -30,7 +30,7 @@ impl ActivityCommandPayload {
 }
 
 #[derive(Debug, Serialize)]
-struct ActivityCommandPayloadArgs {
+struct ActivityCommandArgs {
     pid: u32,
     activity: Option<ActivityPayload>,
 }
@@ -53,6 +53,8 @@ pub(crate) struct ActivityPayload {
     pub timestamps: TimestampPayload,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub assets: Option<AssetsPayload>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub buttons: Option<Vec<ButtonPayload>>,
 }
 
 #[derive(Debug, Serialize)]
@@ -65,6 +67,12 @@ pub(crate) struct AssetsPayload {
     pub small_image: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub small_text: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub(crate) struct ButtonPayload {
+    pub label: String,
+    pub url: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -153,6 +161,7 @@ pub struct Activity {
     pub(crate) large_image_text: Option<String>,
     pub(crate) small_image_key: Option<String>,
     pub(crate) small_image_text: Option<String>,
+    pub(crate) buttons: Option<HashMap<String, String>>,
 }
 
 impl Activity {
@@ -175,6 +184,7 @@ pub struct ActivityBuilder {
     large_image_text: Option<String>,
     small_image_key: Option<String>,
     small_image_text: Option<String>,
+    buttons: Option<HashMap<String, String>>,
 }
 
 impl Default for ActivityBuilder {
@@ -190,6 +200,7 @@ impl Default for ActivityBuilder {
             large_image_text: None,
             small_image_key: None,
             small_image_text: None,
+            buttons: None,
         }
     }
 }
@@ -234,6 +245,19 @@ impl ActivityBuilder {
         self
     }
 
+    /// Add a button to the activity.
+    pub fn add_button(mut self, label: impl Into<String>, url: impl Into<String>) -> Self {
+        if let Some(btns) = &mut self.buttons {
+            btns.insert(label.into(), url.into());
+        } else {
+            let mut btns: HashMap<String, String> = HashMap::new();
+            btns.insert(label.into(), url.into());
+            self.buttons = Some(btns);
+        };
+
+        self
+    }
+
     /// Large image for your activity (e.g., game icon).
     pub fn large_image(mut self, key: impl Into<String>, text: Option<impl Into<String>>) -> Self {
         self.large_image_key = Some(key.into());
@@ -261,6 +285,7 @@ impl ActivityBuilder {
             large_image_text: self.large_image_text,
             small_image_key: self.small_image_key,
             small_image_text: self.small_image_text,
+            buttons: self.buttons,
         }
     }
 }

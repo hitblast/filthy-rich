@@ -21,7 +21,7 @@ use tokio::{
     net::windows::named_pipe::{ClientOptions, NamedPipeClient},
 };
 
-use crate::types::{Activity, ActivityCommandPayload, ActivityPayload, TimestampPayload};
+use crate::types::{Activity, ActivityCommand, ActivityPayload, ButtonPayload, TimestampPayload};
 use crate::utils::get_current_timestamp;
 
 #[cfg(target_family = "windows")]
@@ -199,7 +199,20 @@ impl DiscordSock {
             None
         };
 
-        let cmd = ActivityCommandPayload::new_with(Some(ActivityPayload {
+        let buttons: Option<Vec<ButtonPayload>> = if let Some(btns) = activity.buttons {
+            Some(
+                btns.into_iter()
+                    .map(|f| ButtonPayload {
+                        label: f.0,
+                        url: f.1,
+                    })
+                    .collect(),
+            )
+        } else {
+            None
+        };
+
+        let cmd = ActivityCommand::new_with(Some(ActivityPayload {
             name: activity.name,
             r#type: activity.activity_type.into(),
             created_at: current_t,
@@ -211,6 +224,7 @@ impl DiscordSock {
                 end: end_timestamp,
             },
             assets,
+            buttons,
         }));
 
         self.send_cmd(cmd).await?;
@@ -218,7 +232,7 @@ impl DiscordSock {
     }
 
     pub(crate) async fn clear_activity(&mut self) -> Result<()> {
-        let cmd = ActivityCommandPayload::new_with(None);
+        let cmd = ActivityCommand::new_with(None);
         self.send_cmd(cmd).await?;
         Ok(())
     }
@@ -229,7 +243,7 @@ impl DiscordSock {
         Ok(())
     }
 
-    async fn send_cmd(&mut self, cmd: ActivityCommandPayload) -> Result<()> {
+    async fn send_cmd(&mut self, cmd: ActivityCommand) -> Result<()> {
         let cmd = cmd.to_json()?;
         self.send_frame(1, cmd).await?;
         Ok(())
