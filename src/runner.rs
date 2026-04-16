@@ -7,7 +7,7 @@ use std::{
 };
 use tokio::{sync::mpsc, task::JoinHandle, time::sleep};
 
-use anyhow::{Result, bail};
+use anyhow::{Result, anyhow, bail};
 
 use crate::{
     PresenceClient,
@@ -15,6 +15,8 @@ use crate::{
     types::{Activity, IPCCommand, ReadyData, RpcFrame},
     utils::get_current_timestamp,
 };
+
+const MULTIPLE_RUN_CALL_ERR: &str = "PresenceRunner::run() called more than once";
 
 /// A runner that manages the Discord RPC background task.
 /// Create a runner, configure it, run it to get a client handle, then clone the handle for sharing.
@@ -52,14 +54,15 @@ impl PresenceRunner {
     /// Must be called before any client handle operations.
     pub async fn run(&mut self, wait_for_ready: bool) -> Result<&PresenceClient> {
         if self.client.running.swap(true, Ordering::SeqCst) {
-            bail!(
-                "Cannot run multiple instances of .run() for PresenceRunner, or when a session is still closing."
-            )
+            bail!(MULTIPLE_RUN_CALL_ERR)
         }
 
         let client_id = self.client.client_id.clone();
         let running = self.client.running.clone();
-        let mut rx = self.rx.take().unwrap();
+        let mut rx = self
+            .rx
+            .take()
+            .ok_or_else(|| anyhow!(MULTIPLE_RUN_CALL_ERR))?;
 
         // oneshot channel to signal when READY is received the first time
         let (ready_tx, ready_rx) = tokio::sync::oneshot::channel::<()>();
