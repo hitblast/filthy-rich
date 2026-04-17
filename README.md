@@ -81,7 +81,7 @@ cargo run --example simple  # ex. 3
 
 ## API Reference (docs.rs)
 
-https://docs.rs/crate/filthy-rich/latest
+https://docs.rs/filthy-rich/latest/filthy_rich/
 
 ## Yet another library?
 
