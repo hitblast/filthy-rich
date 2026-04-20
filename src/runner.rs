@@ -74,6 +74,8 @@ impl PresenceRunner {
             let mut last_activity: Option<Activity> = None;
             let mut ready_tx = Some(ready_tx);
 
+            let mut session_start: Option<u64> = None;
+
             'outer: while running.load(Ordering::SeqCst) {
                 // initial connect
                 let mut socket = match DiscordSock::new().await {
@@ -123,10 +125,10 @@ impl PresenceRunner {
                     }
                 }
 
-                let session_start = get_current_timestamp()?;
-
                 if let Some(activity) = &last_activity {
-                    let _ = socket.send_activity(activity.clone(), session_start).await;
+                    if let Some(t) = session_start {
+                        let _ = socket.send_activity(activity.clone(), t).await;
+                    }
                 }
 
                 backoff = 1;
@@ -140,14 +142,20 @@ impl PresenceRunner {
                                 Some(cmd) => {
                                     match cmd {
                                         IPCCommand::SetActivity { activity } => {
+                                            if session_start.is_none() {
+                                                session_start = Some(get_current_timestamp()?)
+                                            }
+
                                             last_activity = Some(activity.clone());
 
-                                            if socket.send_activity(activity, session_start).await.is_err() {
+                                            if socket.send_activity(activity, session_start.unwrap()).await.is_err() {
                                                 break;
                                             }
+
                                         },
                                         IPCCommand::ClearActivity => {
                                             last_activity = None;
+                                            session_start = None;
 
                                             if socket.clear_activity().await.is_err() { break; }
                                         },
