@@ -16,11 +16,13 @@ pub struct PresenceClient {
 
 impl PresenceClient {
     /// Returns the client ID.
+    #[must_use]
     pub fn client_id(&self) -> String {
         self.client_id.clone()
     }
 
     /// Checks if the task is running.
+    #[must_use]
     pub fn is_running(&self) -> bool {
         self.running.load(Ordering::SeqCst)
     }
@@ -32,7 +34,11 @@ impl PresenceClient {
             anyhow::bail!("Call .run() before .set_activity() execution.");
         }
 
-        self.tx.send(IPCCommand::SetActivity { activity }).await?;
+        self.tx
+            .send(IPCCommand::SetActivity {
+                activity: Box::new(activity),
+            })
+            .await?;
         Ok(())
     }
 

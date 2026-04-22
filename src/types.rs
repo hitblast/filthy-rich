@@ -1,5 +1,5 @@
 use anyhow::{Context, Result};
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, ser::SerializeStruct};
 use std::{collections::HashMap, time::Duration};
 use uuid::Uuid;
 
@@ -57,16 +57,47 @@ pub(crate) struct ActivityPayload {
     pub buttons: Option<Vec<ButtonPayload>>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
 pub(crate) struct AssetsPayload {
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub large_image: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    pub large_url: Option<String>,
     pub large_text: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub small_image: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub small_text: Option<String>,
+    pub small_url: Option<String>,
+}
+
+impl Serialize for AssetsPayload {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let mut state = serializer.serialize_struct("AssetsPayload", 5)?;
+
+        if let Some(v) = &self.large_image {
+            state.serialize_field("large_image", v)?;
+
+            if let Some(v) = &self.large_text {
+                state.serialize_field("large_text", v)?;
+            }
+            if let Some(v) = &self.large_url {
+                state.serialize_field("large_url", v)?;
+            }
+        }
+
+        if let Some(v) = &self.small_image {
+            state.serialize_field("small_image", v)?;
+
+            if let Some(v) = &self.small_text {
+                state.serialize_field("small_text", v)?;
+            }
+            if let Some(v) = &self.small_url {
+                state.serialize_field("small_url", v)?;
+            }
+        }
+
+        state.end()
+    }
 }
 
 #[derive(Debug, Serialize)]
@@ -91,7 +122,7 @@ pub(crate) struct RpcFrame {
 
 #[derive(Debug)]
 pub(crate) enum IPCCommand {
-    SetActivity { activity: Activity },
+    SetActivity { activity: Box<Activity> },
     ClearActivity,
     Close,
 }
@@ -159,13 +190,17 @@ pub struct Activity {
     pub(crate) duration: Option<Duration>,
     pub(crate) large_image_key: Option<String>,
     pub(crate) large_image_text: Option<String>,
+    pub(crate) large_url: Option<String>,
     pub(crate) small_image_key: Option<String>,
     pub(crate) small_image_text: Option<String>,
+    pub(crate) small_url: Option<String>,
     pub(crate) buttons: Option<HashMap<String, String>>,
 }
 
 impl Activity {
     /// Initializes a new activity builder instance.
+    #[must_use]
+    #[allow(clippy::new_ret_no_self)]
     pub fn new() -> ActivityBuilder {
         ActivityBuilder::default()
     }
@@ -182,8 +217,10 @@ pub struct ActivityBuilder {
     duration: Option<Duration>,
     large_image_key: Option<String>,
     large_image_text: Option<String>,
+    large_url: Option<String>,
     small_image_key: Option<String>,
     small_image_text: Option<String>,
+    small_url: Option<String>,
     buttons: Option<HashMap<String, String>>,
 }
 
@@ -198,8 +235,10 @@ impl Default for ActivityBuilder {
             duration: None,
             large_image_key: None,
             large_image_text: None,
+            large_url: None,
             small_image_key: None,
             small_image_text: None,
+            small_url: None,
             buttons: None,
         }
     }
@@ -213,6 +252,7 @@ impl ActivityBuilder {
     }
 
     /// The type of activity you want to create.
+    #[must_use]
     pub fn activity_type(mut self, r#type: ActivityType) -> Self {
         self.activity_type = r#type;
         self
@@ -234,12 +274,14 @@ impl ActivityBuilder {
     ///
     /// Errors:
     ///     Can error if `state` is missing and [`StatusDisplayType::State`] has been passed as the type.
+    #[must_use]
     pub fn status_display_type(mut self, r#type: StatusDisplayType) -> Self {
         self.status_display_type = Some(r#type);
         self
     }
 
     /// Countdown duration for your activity.
+    #[must_use]
     pub fn duration(mut self, duration: Duration) -> Self {
         self.duration = Some(duration);
         self
@@ -259,20 +301,33 @@ impl ActivityBuilder {
     }
 
     /// Large image for your activity (e.g., game icon).
-    pub fn large_image(mut self, key: impl Into<String>, text: Option<impl Into<String>>) -> Self {
+    pub fn large_image(
+        mut self,
+        key: impl Into<String>,
+        text: Option<impl Into<String>>,
+        url: Option<impl Into<String>>,
+    ) -> Self {
         self.large_image_key = Some(key.into());
         self.large_image_text = text.map(|t| t.into());
+        self.large_url = url.map(|t| t.into());
         self
     }
 
     /// Small image for your activity (e.g., status icon).
-    pub fn small_image(mut self, key: impl Into<String>, text: Option<impl Into<String>>) -> Self {
+    pub fn small_image(
+        mut self,
+        key: impl Into<String>,
+        text: Option<impl Into<String>>,
+        url: Option<impl Into<String>>,
+    ) -> Self {
         self.small_image_key = Some(key.into());
         self.small_image_text = text.map(|t| t.into());
+        self.small_url = url.map(|t| t.into());
         self
     }
 
     /// Parses the state of this builder into a usable [`Activity`] for you to pass through [`PresenceClient::set_activity`].
+    #[must_use]
     pub fn build(self) -> Activity {
         Activity {
             name: self.name,
@@ -283,8 +338,10 @@ impl ActivityBuilder {
             duration: self.duration,
             large_image_key: self.large_image_key,
             large_image_text: self.large_image_text,
+            large_url: self.large_url,
             small_image_key: self.small_image_key,
             small_image_text: self.small_image_text,
+            small_url: self.small_url,
             buttons: self.buttons,
         }
     }

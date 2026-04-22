@@ -15,8 +15,12 @@ async fn main() -> Result<()> {
         .activity_type(ActivityType::Competing)
         .details("epic game")
         .status_display_type(StatusDisplayType::Details)
-        .large_image("game_icon", Some("Playing a game"))
-        .small_image("status", Some("Online"))
+        .large_image(
+            "game_icon",
+            Some("Playing a game"),
+            Some("https://hitblast.github.io/"),
+        )
+        .small_image("status", Some("Online"), None::<String>)
         .build();
 
     client.set_activity(activity).await?;

@@ -192,25 +192,23 @@ impl DiscordSock {
             Some(crate::types::AssetsPayload {
                 large_image: activity.large_image_key,
                 large_text: activity.large_image_text,
+                large_url: activity.large_url,
                 small_image: activity.small_image_key,
                 small_text: activity.small_image_text,
+                small_url: activity.small_url,
             })
         } else {
             None
         };
 
-        let buttons: Option<Vec<ButtonPayload>> = if let Some(btns) = activity.buttons {
-            Some(
-                btns.into_iter()
-                    .map(|f| ButtonPayload {
-                        label: f.0,
-                        url: f.1,
-                    })
-                    .collect(),
-            )
-        } else {
-            None
-        };
+        let buttons: Option<Vec<ButtonPayload>> = activity.buttons.map(|btns| {
+            btns.into_iter()
+                .map(|f| ButtonPayload {
+                    label: f.0,
+                    url: f.1,
+                })
+                .collect()
+        });
 
         let cmd = ActivityCommand::new_with(Some(ActivityPayload {
             name: activity.name,

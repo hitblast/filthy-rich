@@ -28,6 +28,7 @@ pub struct PresenceRunner {
 }
 
 impl PresenceRunner {
+    #[must_use]
     pub fn new(client_id: &str) -> Self {
         let (tx, rx) = mpsc::channel(32);
         let client = PresenceClient {
@@ -44,7 +45,9 @@ impl PresenceRunner {
         }
     }
 
-    /// Run a particular closure after receiving the READY event from the local Discord IPC server.
+    /// Run a particular closure after receiving the READY event from the Discord RPC server.
+    ///
+    /// This event can fire multiple times depending on how many times the client needs to reconnect with Discord RPC.
     pub fn on_ready<F: Fn(ReadyData) + Send + Sync + 'static>(mut self, f: F) -> Self {
         self.on_ready = Some(Box::new(f));
         self
@@ -142,16 +145,18 @@ impl PresenceRunner {
                                 Some(cmd) => {
                                     match cmd {
                                         IPCCommand::SetActivity { activity } => {
-                                            if session_start.is_none() {
-                                                session_start = Some(get_current_timestamp()?)
-                                            }
+                                            let session_start_unpacked = if let Some(s) = session_start {
+                                                s
+                                            } else {
+                                                get_current_timestamp()?
+                                            };
 
+                                            let activity = *activity;
                                             last_activity = Some(activity.clone());
 
-                                            if socket.send_activity(activity, session_start.unwrap()).await.is_err() {
+                                            if socket.send_activity(activity, session_start_unpacked).await.is_err() {
                                                 break;
                                             }
-
                                         },
                                         IPCCommand::ClearActivity => {
                                             last_activity = None;
@@ -181,9 +186,8 @@ impl PresenceRunner {
                                         }
                                     }
                                     2 => break,
-                                    3 => {
-                                        if socket.send_frame(3, frame.body).await.is_err() { break; }
-                                    }
+                                    3
+                                        if socket.send_frame(3, frame.body).await.is_err() => { break; }
                                     _ => {}
                                 },
                                 Err(_) => break,
@@ -212,6 +216,7 @@ impl PresenceRunner {
     }
 
     /// Returns a clone of the client handle for sharing.
+    #[must_use]
     pub fn clone_handle(&self) -> PresenceClient {
         self.client.clone()
     }
