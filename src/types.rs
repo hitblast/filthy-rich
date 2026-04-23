@@ -45,6 +45,8 @@ pub(crate) struct ActivityPayload {
     pub r#type: u8,
     pub created_at: u64,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub url: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub status_display_type: Option<u8>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub details: Option<String>,
@@ -153,6 +155,7 @@ pub struct DiscordUser {
 #[derive(Clone, Debug, Eq, PartialEq, Copy)]
 pub enum ActivityType {
     Playing = 0,
+    Streaming = 1,
     Listening = 2,
     Watching = 3,
     Competing = 5,
@@ -184,6 +187,7 @@ impl From<StatusDisplayType> for u8 {
 pub struct Activity {
     pub(crate) name: Option<String>,
     pub(crate) activity_type: ActivityType,
+    pub(crate) url: Option<String>,
     pub(crate) status_display_type: Option<StatusDisplayType>,
     pub(crate) details: Option<String>,
     pub(crate) state: Option<String>,
@@ -211,6 +215,7 @@ impl Activity {
 pub struct ActivityBuilder {
     name: Option<String>,
     activity_type: ActivityType,
+    url: Option<String>,
     status_display_type: Option<StatusDisplayType>,
     details: Option<String>,
     state: Option<String>,
@@ -230,6 +235,7 @@ impl Default for ActivityBuilder {
             name: None,
             activity_type: ActivityType::Playing,
             status_display_type: None,
+            url: None,
             details: None,
             state: None,
             duration: None,
@@ -326,6 +332,12 @@ impl ActivityBuilder {
         self
     }
 
+    /// The URL of for a stream. Only validated if [`ActivityType::Streaming`] is set.
+    pub fn url(mut self, url: Option<String>) -> Self {
+        self.url = url;
+        self
+    }
+
     /// Parses the state of this builder into a usable [`Activity`] for you to pass through [`PresenceClient::set_activity`].
     #[must_use]
     pub fn build(self) -> Activity {
@@ -343,6 +355,7 @@ impl ActivityBuilder {
             small_text: self.small_text,
             small_url: self.small_url,
             buttons: self.buttons,
+            url: self.url,
         }
     }
 }

@@ -223,6 +223,7 @@ impl DiscordSock {
             },
             assets,
             buttons,
+            url: activity.url,
         }));
 
         self.send_cmd(cmd).await?;
