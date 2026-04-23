@@ -12,7 +12,7 @@ use anyhow::{Result, anyhow, bail};
 use crate::{
     PresenceClient,
     socket::DiscordSock,
-    types::{Activity, IPCCommand, ReadyData, RpcFrame},
+    types::{Activity, DynamicRPCFrame, IPCCommand, RPCFrame, ReadyData},
     utils::get_current_timestamp,
 };
 
@@ -117,7 +117,7 @@ impl PresenceRunner {
                         continue;
                     }
 
-                    if let Ok(json) = serde_json::from_slice::<RpcFrame>(&frame.body) {
+                    if let Ok(json) = serde_json::from_slice::<RPCFrame>(&frame.body) {
                         if json.cmd.as_deref() == Some("DISPATCH")
                             && json.evt.as_deref() == Some("READY")
                         {
@@ -197,12 +197,15 @@ impl PresenceRunner {
 
                         frame = socket.read_frame() => {
                             match frame {
-                                Ok(frame) => match frame.opcode {
+                                Ok(frame) => {
+                                    match frame.opcode {
                                     1 => {
-                                        if let Ok(json) = serde_json::from_slice::<RpcFrame>(&frame.body) {
+                                        if let Ok(json) = serde_json::from_slice::<DynamicRPCFrame>(&frame.body) {
                                             if json.evt.as_deref() == Some("ERROR") && do_verbose_errors {
-                                                eprintln!("Discord RPC RpcFrame slice evt == ERROR: {:?}", json.data);
+                                                eprintln!("Discord RPC DynamicRPCFrame error: {:?}", json.data);
                                             }
+                                        } else {
+                                            println!("json error")
                                         }
                                     }
                                     2 => break,
@@ -214,6 +217,7 @@ impl PresenceRunner {
                                             break;
                                         }
                                     _ => {}
+                                }
                                 },
                                 Err(e) => {
                                     if do_verbose_errors {

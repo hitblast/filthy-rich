@@ -38,11 +38,15 @@ async fn main() -> Result<()> {
 
 ```
 
+### Bulletin
+
 > [!WARNING]
-> All development work happens in the [Codeberg repository](https://codeberg.org/hitblast/filthy-rich); the GitHub mirror is primarily for *receiving* pull requests from the broader spectrum of the userbase.
+> Even though this library follows most of Discord's spec-sheet, some features which are not even implemented in Discord itself but were included in the documentation have been skipped for a smoother experience.
 
 > [!NOTE]
 > Requires Rust 1.82.0 or later.
+
+## Getting Started
 
 Add `filthy-rich` to your project with this command:
 
