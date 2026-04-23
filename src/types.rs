@@ -67,6 +67,8 @@ pub(crate) struct AssetsPayload {
     pub small_url: Option<String>,
 }
 
+// This is redundant as [`ActivityBuilder`] already accepts large_image/small_image fields mandatorily before receiving any of their
+// corresponding url/text fields to ensure safety.
 impl Serialize for AssetsPayload {
     fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
     where
