@@ -204,8 +204,6 @@ impl PresenceRunner {
                                             if json.evt.as_deref() == Some("ERROR") && do_verbose_errors {
                                                 eprintln!("Discord RPC DynamicRPCFrame error: {:?}", json.data);
                                             }
-                                        } else {
-                                            println!("json error")
                                         }
                                     }
                                     2 => break,
