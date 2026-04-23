@@ -14,6 +14,7 @@ Improvements of existing features:
 - Removed even more unwraps.
 - When sending an `Activity` over an `IPCCommand` message, it is now wrapped in a `Box` first.
 - The internal `AssetsPayload` now has a custom `Serialize` implementation which ensures that `*_url` and `*_text` fields aren't serialized if the `*_image` fields are missing in the first place. This is more of an extra, redundant layer of safety to protect against invalid objects being passed down the IPC RPC pipeline.
+- Fixed more `clippy` errors.
 
 Bug fixes:
 
