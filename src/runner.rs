@@ -25,6 +25,7 @@ pub struct PresenceRunner {
     client: PresenceClient,
     join_handle: Option<JoinHandle<Result<()>>>,
     on_ready: Option<Box<dyn Fn(ReadyData) + Send + Sync + 'static>>,
+    do_verbose_errors: bool,
 }
 
 impl PresenceRunner {
@@ -42,6 +43,7 @@ impl PresenceRunner {
             client,
             join_handle: None,
             on_ready: None,
+            do_verbose_errors: false,
         }
     }
 
@@ -50,6 +52,12 @@ impl PresenceRunner {
     /// This event can fire multiple times depending on how many times the client needs to reconnect with Discord RPC.
     pub fn on_ready<F: Fn(ReadyData) + Send + Sync + 'static>(mut self, f: F) -> Self {
         self.on_ready = Some(Box::new(f));
+        self
+    }
+
+    /// Enable verbose error logging for RPC and code events.
+    pub fn show_errors(mut self) -> Self {
+        self.do_verbose_errors = true;
         self
     }
 
@@ -62,6 +70,8 @@ impl PresenceRunner {
 
         let client_id = self.client.client_id.clone();
         let running = self.client.running.clone();
+        let do_verbose_errors = self.do_verbose_errors.clone();
+
         let mut rx = self
             .rx
             .take()
@@ -122,8 +132,8 @@ impl PresenceRunner {
                             break;
                         }
 
-                        if json.evt.as_deref() == Some("ERROR") {
-                            eprintln!("Discord RPC error: {:?}", json.data);
+                        if json.evt.as_deref() == Some("ERROR") && do_verbose_errors {
+                            eprintln!("Discord RPC ready event receiver error: {:?}", json.data);
                         }
                     }
                 }
@@ -154,7 +164,10 @@ impl PresenceRunner {
                                             let activity = *activity;
                                             last_activity = Some(activity.clone());
 
-                                            if socket.send_activity(activity, session_start_unpacked).await.is_err() {
+                                            if let Err(e) = socket.send_activity(activity, session_start_unpacked).await {
+                                                if do_verbose_errors {
+                                                    eprintln!("Discord RPC send_activity error: {e}");
+                                                }
                                                 break;
                                             }
                                         },
@@ -162,7 +175,12 @@ impl PresenceRunner {
                                             last_activity = None;
                                             session_start = None;
 
-                                            if socket.clear_activity().await.is_err() { break; }
+                                            if let Err(e) = socket.clear_activity().await {
+                                                if do_verbose_errors {
+                                                    eprintln!("Discord RPC clear_activity error: {e}");
+                                                }
+                                                break;
+                                            }
                                         },
                                         IPCCommand::Close => {
                                             let _ = socket.close().await;
@@ -180,17 +198,27 @@ impl PresenceRunner {
                                 Ok(frame) => match frame.opcode {
                                     1 => {
                                         if let Ok(json) = serde_json::from_slice::<RpcFrame>(&frame.body) {
-                                            if json.evt.as_deref() == Some("ERROR") {
-                                                eprintln!("Discord RPC error: {:?}", json.data);
+                                            if json.evt.as_deref() == Some("ERROR") && do_verbose_errors {
+                                                eprintln!("Discord RPC RpcFrame slice evt == ERROR: {:?}", json.data);
                                             }
                                         }
                                     }
                                     2 => break,
                                     3
-                                        if socket.send_frame(3, frame.body).await.is_err() => { break; }
+                                        if let Err(e) = socket.send_frame(3, frame.body).await => {
+                                            if do_verbose_errors {
+                                                eprintln!("Discord RPC send_frame error: {e}");
+                                            }
+                                            break;
+                                        }
                                     _ => {}
                                 },
-                                Err(_) => break,
+                                Err(e) => {
+                                    if do_verbose_errors {
+                                        eprintln!("Discord RPC generic frame read error: {e}")
+                                    }
+                                    break;
+                                },
                             }
                         }
                     }
