@@ -105,6 +105,7 @@ impl PresenceRunner {
                     continue;
                 }
 
+                // ready loop
                 loop {
                     let frame = match socket.read_frame().await {
                         Ok(f) => f,
@@ -138,6 +139,7 @@ impl PresenceRunner {
                     }
                 }
 
+                // restore last activity (if any)
                 if let Some(activity) = &last_activity {
                     if let Some(t) = session_start {
                         if let Err(e) = socket.send_activity(activity.clone(), t).await {
@@ -148,6 +150,7 @@ impl PresenceRunner {
 
                 backoff = 1;
 
+                // generic loop for receiving commands and responding to pings from Discord itself
                 loop {
                     tokio::select! {
                         biased;
@@ -204,6 +207,7 @@ impl PresenceRunner {
                                             if json.evt.as_deref() == Some("ERROR") && do_verbose_errors {
                                                 eprintln!("Discord RPC DynamicRPCFrame error: {:?}", json.data);
                                             }
+
                                         }
                                     }
                                     2 => break,
