@@ -140,7 +140,9 @@ impl PresenceRunner {
 
                 if let Some(activity) = &last_activity {
                     if let Some(t) = session_start {
-                        let _ = socket.send_activity(activity.clone(), t).await;
+                        if let Err(e) = socket.send_activity(activity.clone(), t).await {
+                            eprintln!("Discord RPC last activity restore error: {e}")
+                        }
                     }
                 }
 
