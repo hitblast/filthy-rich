@@ -188,13 +188,13 @@ impl DiscordSock {
         let current_t = get_current_timestamp()?;
         let end_timestamp = activity.duration.map(|d| current_t + d.as_secs());
 
-        let assets = if activity.large_image_key.is_some() || activity.small_image_key.is_some() {
+        let assets = if activity.large_image.is_some() || activity.small_image.is_some() {
             Some(crate::types::AssetsPayload {
-                large_image: activity.large_image_key,
-                large_text: activity.large_image_text,
+                large_image: activity.large_image,
+                large_text: activity.large_text,
                 large_url: activity.large_url,
-                small_image: activity.small_image_key,
-                small_text: activity.small_image_text,
+                small_image: activity.small_image,
+                small_text: activity.small_text,
                 small_url: activity.small_url,
             })
         } else {

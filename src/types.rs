@@ -188,11 +188,11 @@ pub struct Activity {
     pub(crate) details: Option<String>,
     pub(crate) state: Option<String>,
     pub(crate) duration: Option<Duration>,
-    pub(crate) large_image_key: Option<String>,
-    pub(crate) large_image_text: Option<String>,
+    pub(crate) large_image: Option<String>,
+    pub(crate) large_text: Option<String>,
     pub(crate) large_url: Option<String>,
-    pub(crate) small_image_key: Option<String>,
-    pub(crate) small_image_text: Option<String>,
+    pub(crate) small_image: Option<String>,
+    pub(crate) small_text: Option<String>,
     pub(crate) small_url: Option<String>,
     pub(crate) buttons: Option<HashMap<String, String>>,
 }
@@ -215,11 +215,11 @@ pub struct ActivityBuilder {
     details: Option<String>,
     state: Option<String>,
     duration: Option<Duration>,
-    large_image_key: Option<String>,
-    large_image_text: Option<String>,
+    large_image: Option<String>,
+    large_text: Option<String>,
     large_url: Option<String>,
-    small_image_key: Option<String>,
-    small_image_text: Option<String>,
+    small_image: Option<String>,
+    small_text: Option<String>,
     small_url: Option<String>,
     buttons: Option<HashMap<String, String>>,
 }
@@ -233,11 +233,11 @@ impl Default for ActivityBuilder {
             details: None,
             state: None,
             duration: None,
-            large_image_key: None,
-            large_image_text: None,
+            large_image: None,
+            large_text: None,
             large_url: None,
-            small_image_key: None,
-            small_image_text: None,
+            small_image: None,
+            small_text: None,
             small_url: None,
             buttons: None,
         }
@@ -307,8 +307,8 @@ impl ActivityBuilder {
         text: Option<impl Into<String>>,
         url: Option<impl Into<String>>,
     ) -> Self {
-        self.large_image_key = Some(key.into());
-        self.large_image_text = text.map(|t| t.into());
+        self.large_image = Some(key.into());
+        self.large_text = text.map(|t| t.into());
         self.large_url = url.map(|t| t.into());
         self
     }
@@ -320,8 +320,8 @@ impl ActivityBuilder {
         text: Option<impl Into<String>>,
         url: Option<impl Into<String>>,
     ) -> Self {
-        self.small_image_key = Some(key.into());
-        self.small_image_text = text.map(|t| t.into());
+        self.small_image = Some(key.into());
+        self.small_text = text.map(|t| t.into());
         self.small_url = url.map(|t| t.into());
         self
     }
@@ -336,11 +336,11 @@ impl ActivityBuilder {
             details: self.details,
             state: self.state,
             duration: self.duration,
-            large_image_key: self.large_image_key,
-            large_image_text: self.large_image_text,
+            large_image: self.large_image,
+            large_text: self.large_text,
             large_url: self.large_url,
-            small_image_key: self.small_image_key,
-            small_image_text: self.small_image_text,
+            small_image: self.small_image,
+            small_text: self.small_text,
             small_url: self.small_url,
             buttons: self.buttons,
         }
