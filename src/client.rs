@@ -54,7 +54,7 @@ impl PresenceClient {
     /// Closes the current connection if any.
     pub async fn close(&self) -> Result<(), anyhow::Error> {
         if self.is_running() {
-            let _ = self.tx.send(IPCCommand::Close).await;
+            self.tx.send(IPCCommand::Close).await?;
         }
 
         Ok(())
