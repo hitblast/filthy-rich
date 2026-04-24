@@ -1,14 +1,30 @@
 use anyhow::Result;
-use std::time::Duration;
+use std::{
+    sync::{
+        Arc,
+        atomic::{AtomicU8, Ordering},
+    },
+    time::Duration,
+};
 
 use filthy_rich::{PresenceRunner, types::Activity};
 use tokio::time::sleep;
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    // simple atomic counter
+    let count = Arc::new(AtomicU8::new(0));
+
     let mut runner = PresenceRunner::new("1463450870480900160")
         .on_ready(|data| println!("Connected to user: {}", data.user.username))
+        .on_activity_send(move |_| {
 
+            // increments the counter with every send_activity()
+            let val = count.fetch_add(1, Ordering::Relaxed) + 1;
+
+            println!("Activity {val} sent successfully.")
+
+        })
         .show_errors() // enables verbose error logging
     ;
 

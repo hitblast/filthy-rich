@@ -14,7 +14,7 @@
 
 ```rust
 // a sneak-peek into what you'll be working with
-// this usually helps me personally when looking at libraries
+//
 use anyhow::Result;
 use filthy_rich::{Activity, PresenceRunner};
 
@@ -43,6 +43,9 @@ async fn main() -> Result<()> {
 > [!WARNING]
 > Even though this library follows most of Discord's spec-sheet, some features which are not even implemented in Discord itself but were included in the documentation have been skipped for a smoother experience.
 
+> [!WARNING]
+> Expect breaking changes before the `v1.0.0` release.
+
 > [!NOTE]
 > Requires Rust 1.82.0 or later.
 
@@ -58,6 +61,7 @@ cargo add filthy-rich
 
 - Really easy to implement; just create a client ID at the [Discord Developer Portal](https://discord.com/developers) and you're good to go.
 - Fruitful `Activity` builder guaranteed to make you fall in love with setting presences.
+- Ergonomic `on_ready`, `on_activity_send` etc. events to aid you with states when building apps.
 - Clean whilst being easy; properly handles Discord's responses.
 - Fully asynchronous but easily wrappable for synchronous usage.
 - Client-runner architecture for easy-adding in state-driven GUI apps or games.

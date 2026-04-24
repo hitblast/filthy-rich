@@ -1,3 +1,4 @@
+use serde_json::Value;
 use std::{
     sync::{
         Arc,
@@ -25,6 +26,7 @@ pub struct PresenceRunner {
     client: PresenceClient,
     join_handle: Option<JoinHandle<Result<()>>>,
     on_ready: Option<Box<dyn Fn(ReadyData) + Send + Sync + 'static>>,
+    on_activity_send: Option<Box<dyn Fn(serde_json::Value) + Send + Sync + 'static>>,
     do_verbose_errors: bool,
 }
 
@@ -43,6 +45,7 @@ impl PresenceRunner {
             client,
             join_handle: None,
             on_ready: None,
+            on_activity_send: None,
             do_verbose_errors: false,
         }
     }
@@ -52,6 +55,15 @@ impl PresenceRunner {
     /// This event can fire multiple times depending on how many times the client needs to reconnect with Discord RPC.
     pub fn on_ready<F: Fn(ReadyData) + Send + Sync + 'static>(mut self, f: F) -> Self {
         self.on_ready = Some(Box::new(f));
+        self
+    }
+
+    /// Run a particular closure after ensuring that a [`PresenceClient::send_activity`] has successfully managed to
+    /// pass its data through the IPC channel.
+    ///
+    /// This event can fire multiple times based on how many activities you set.
+    pub fn on_activity_send<F: Fn(Value) + Send + Sync + 'static>(mut self, f: F) -> Self {
+        self.on_activity_send = Some(Box::new(f));
         self
     }
 
@@ -80,7 +92,9 @@ impl PresenceRunner {
         // oneshot channel to signal when READY is received the first time
         let (ready_tx, ready_rx) = tokio::sync::oneshot::channel::<()>();
 
+        // executable closers (executed within the loop)
         let on_ready = self.on_ready.take();
+        let on_activity_send = self.on_activity_send.take();
 
         let join_handle = tokio::spawn(async move {
             let mut backoff = 1;
@@ -206,8 +220,13 @@ impl PresenceRunner {
                                         if let Ok(json) = serde_json::from_slice::<DynamicRPCFrame>(&frame.body) {
                                             if json.evt.as_deref() == Some("ERROR") && do_verbose_errors {
                                                 eprintln!("Discord RPC DynamicRPCFrame error: {:?}", json.data);
+                                            } else if json.cmd.as_deref() == Some("SET_ACTIVITY") {
+                                                if let Some(f) = &on_activity_send {
+                                                    if let Some(data) = json.data {
+                                                        f(data)
+                                                    }
+                                                }
                                             }
-
                                         }
                                     }
                                     2 => break,
