@@ -184,7 +184,9 @@ impl PresenceRunner {
                                             let session_start_unpacked = if let Some(s) = session_start {
                                                 s
                                             } else {
-                                                get_current_timestamp()?
+                                                let t = get_current_timestamp()?;
+                                                session_start = Some(t);
+                                                t
                                             };
 
                                             let activity = *activity;
