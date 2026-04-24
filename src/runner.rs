@@ -72,6 +72,7 @@ impl PresenceRunner {
     }
 
     /// Enable verbose error logging for RPC and code events.
+    #[must_use] 
     pub fn show_errors(mut self) -> Self {
         self.do_verbose_errors = true;
         self
@@ -86,7 +87,7 @@ impl PresenceRunner {
 
         let client_id = self.client.client_id.clone();
         let running = self.client.running.clone();
-        let do_verbose_errors = self.do_verbose_errors.clone();
+        let do_verbose_errors = self.do_verbose_errors;
 
         let mut rx = self
             .rx
