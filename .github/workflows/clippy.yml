@@ -1,0 +1,43 @@
+name: Refactor CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches: [master]
+
+env:
+  CARGO_TERM_COLOR: always
+  SCCACHE_GHA_ENABLED: "true"
+  SCCACHE_CACHE_SIZE: 2G
+  RUSTC_WRAPPER: "sccache"
+
+concurrency:
+  group: "tests"
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+
+    env:
+      SCCACHE_GHA_ENABLED: "true"
+      SCCACHE_CACHE_SIZE: 2G
+      RUSTC_WRAPPER: "sccache"
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+          components: clippy, rustfmt
+
+      - uses: Swatinem/rust-cache@v2
+      - uses: mozilla-actions/sccache-action@v0.0.9
+      - run: sccache --show-stats || true
+      - run: cargo clippy --all-targets --no-deps -v -- -D warnings
+      - run: cargo fmt --all -- --check
