@@ -1,3 +1,5 @@
+//! Core types related to filthy-rich. Used in conjunction with the core imports.
+//!
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize, ser::SerializeStruct};
 use std::{collections::HashMap, time::Duration};
@@ -302,7 +304,7 @@ impl ActivityBuilder {
     }
 
     /// Sets the activity to be an instance.
-    #[must_use] 
+    #[must_use]
     pub fn set_as_instance(mut self) -> Self {
         self.instance = Some(true);
         self
