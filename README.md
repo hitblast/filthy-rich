@@ -14,7 +14,7 @@
 </div>
 
 ```rust
-// a sneak-peek into what you'll be working with
+// A sneak-peek into what you will be working with:
 //
 use anyhow::Result;
 use filthy_rich::{Activity, PresenceRunner};
@@ -48,7 +48,7 @@ async fn main() -> Result<()> {
 > Expect breaking changes before the `v1.0.0` release.
 
 > [!NOTE]
-> Requires Rust 1.82.0 or later.
+> Requires Rust 1.82.0 or later (MSRV).
 
 ## Getting Started
 
@@ -103,6 +103,10 @@ Also, other implementations felt much more complex to me and also felt like they
 Thanks to the amazing contributors for adding to this repository:
 
 - [Sirokovsk](https://github.com/Sirokovsk)
+
+## Changelog
+
+For a comprehensive release changelog of this library, please refer to [CHANGELOG.md](./CHANGELOG.md).
 
 ## License
 
