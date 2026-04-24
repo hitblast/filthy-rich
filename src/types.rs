@@ -290,7 +290,7 @@ impl ActivityBuilder {
     }
 
     /// Sets the activity to be an instance.
-    pub fn is_instance(mut self) -> Self {
+    pub fn set_as_instance(mut self) -> Self {
         self.instance = Some(true);
         self
     }
