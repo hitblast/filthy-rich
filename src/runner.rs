@@ -28,11 +28,13 @@ pub struct PresenceRunner {
     join_handle: Option<JoinHandle<Result<()>>>,
     on_ready: Option<Box<dyn Fn(ReadyData) + Send + Sync + 'static>>,
     on_activity_send: Option<Box<dyn Fn(ActivityResponseData) + Send + Sync + 'static>>,
-    do_verbose_errors: bool,
+    show_errors: bool,
 }
 
 impl PresenceRunner {
     #[must_use]
+    /// Create a new [`PresenceRunner`] instance. Requires the client ID of your chosen app from the
+    /// [Discord Developer Portal](https://discord.com/developers/applications).
     pub fn new(client_id: &str) -> Self {
         let (tx, rx) = mpsc::channel(32);
         let client = PresenceClient {
@@ -47,7 +49,7 @@ impl PresenceRunner {
             join_handle: None,
             on_ready: None,
             on_activity_send: None,
-            do_verbose_errors: false,
+            show_errors: false,
         }
     }
 
@@ -74,7 +76,7 @@ impl PresenceRunner {
     /// Enable verbose error logging for RPC and code events.
     #[must_use]
     pub fn show_errors(mut self) -> Self {
-        self.do_verbose_errors = true;
+        self.show_errors = true;
         self
     }
 
@@ -87,7 +89,7 @@ impl PresenceRunner {
 
         let client_id = self.client.client_id.clone();
         let running = self.client.running.clone();
-        let do_verbose_errors = self.do_verbose_errors;
+        let show_errors = self.show_errors;
 
         let mut rx = self
             .rx
@@ -152,7 +154,7 @@ impl PresenceRunner {
                             break;
                         }
 
-                        if json.evt.as_deref() == Some("ERROR") && do_verbose_errors {
+                        if json.evt.as_deref() == Some("ERROR") && show_errors {
                             eprintln!("Discord RPC ready event receiver error: {:?}", json.data);
                         }
                     }
@@ -189,7 +191,7 @@ impl PresenceRunner {
                                             last_activity = Some(activity.clone());
 
                                             if let Err(e) = socket.send_activity(activity, session_start_unpacked).await {
-                                                if do_verbose_errors {
+                                                if show_errors {
                                                     eprintln!("Discord RPC send_activity error: {e}");
                                                 }
                                                 break;
@@ -200,7 +202,7 @@ impl PresenceRunner {
                                             session_start = None;
 
                                             if let Err(e) = socket.clear_activity().await {
-                                                if do_verbose_errors {
+                                                if show_errors {
                                                     eprintln!("Discord RPC clear_activity error: {e}");
                                                 }
                                                 break;
@@ -223,7 +225,7 @@ impl PresenceRunner {
                                     match frame.opcode {
                                     1 => {
                                         if let Ok(json) = serde_json::from_slice::<DynamicRPCFrame>(&frame.body) {
-                                            if json.evt.as_deref() == Some("ERROR") && do_verbose_errors {
+                                            if json.evt.as_deref() == Some("ERROR") && show_errors {
                                                 eprintln!("Discord RPC DynamicRPCFrame error: {:?}", json.data);
                                             } else if json.cmd.as_deref() == Some("SET_ACTIVITY") {
                                                 if let Some(f) = &on_activity_send {
@@ -238,7 +240,7 @@ impl PresenceRunner {
                                     2 => break,
                                     3
                                         if let Err(e) = socket.send_frame(3, frame.body).await => {
-                                            if do_verbose_errors {
+                                            if show_errors {
                                                 eprintln!("Discord RPC send_frame error: {e}");
                                             }
                                             break;
@@ -247,7 +249,7 @@ impl PresenceRunner {
                                 }
                                 },
                                 Err(e) => {
-                                    if do_verbose_errors {
+                                    if show_errors {
                                         eprintln!("Discord RPC generic frame read error: {e}")
                                     }
                                     break;
