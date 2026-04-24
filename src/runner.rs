@@ -72,7 +72,7 @@ impl PresenceRunner {
     }
 
     /// Enable verbose error logging for RPC and code events.
-    #[must_use] 
+    #[must_use]
     pub fn show_errors(mut self) -> Self {
         self.do_verbose_errors = true;
         self
