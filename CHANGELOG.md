@@ -13,6 +13,10 @@ Internal changes:
 
 - Changed `do_verbose_errors` to `show_errors` inside `PresenceRunner`.
 
+Bug fixes:
+
+- Fixed a classic "compute but forget to store" bug with `session_start` that led to new `start` timestamps every time.
+
 ### v0.8.5
 
 New features:
