@@ -12,7 +12,7 @@ use anyhow::{Result, anyhow, bail};
 use crate::{
     PresenceClient,
     socket::DiscordSock,
-    types::{Activity, DynamicRPCFrame, IPCCommand, RPCFrame, ReadyData},
+    types::{Activity, DynamicRPCFrame, IPCCommand, ReadyData, ReadyRPCFrame},
     utils::get_current_timestamp,
 };
 
@@ -118,7 +118,7 @@ impl PresenceRunner {
                         continue;
                     }
 
-                    if let Ok(json) = serde_json::from_slice::<RPCFrame>(&frame.body) {
+                    if let Ok(json) = serde_json::from_slice::<ReadyRPCFrame>(&frame.body) {
                         if json.cmd.as_deref() == Some("DISPATCH")
                             && json.evt.as_deref() == Some("READY")
                         {

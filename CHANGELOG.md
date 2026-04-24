@@ -2,6 +2,8 @@
 
 Active since v0.8.5.
 
+### v0.8.6
+
 ### v0.8.5
 
 New features:

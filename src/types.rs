@@ -45,6 +45,8 @@ pub(crate) struct ActivityPayload {
     pub r#type: u8,
     pub created_at: u64,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub instance: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub status_display_type: Option<u8>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub details: Option<String>,
@@ -115,13 +117,15 @@ pub(crate) struct TimestampPayload {
     pub end: Option<u64>,
 }
 
+/// An iteration of a frame primarily for interpreting received READY events.
 #[derive(Debug, Deserialize)]
-pub(crate) struct RPCFrame {
+pub(crate) struct ReadyRPCFrame {
     pub cmd: Option<String>,
     pub evt: Option<String>,
     pub data: Option<ReadyData>,
 }
 
+/// An iteration of a frame for using throughout the generic read_frame loop.
 #[derive(Debug, Deserialize)]
 pub(crate) struct DynamicRPCFrame {
     #[allow(unused)]
@@ -199,6 +203,7 @@ pub struct Activity {
     pub(crate) status_display_type: Option<StatusDisplayType>,
     pub(crate) details: Option<String>,
     pub(crate) state: Option<String>,
+    pub(crate) instance: Option<bool>,
     pub(crate) duration: Option<Duration>,
     pub(crate) large_image: Option<String>,
     pub(crate) large_text: Option<String>,
@@ -224,6 +229,7 @@ pub struct ActivityBuilder {
     name: Option<String>,
     activity_type: ActivityType,
     status_display_type: Option<StatusDisplayType>,
+    instance: Option<bool>,
     details: Option<String>,
     state: Option<String>,
     duration: Option<Duration>,
@@ -244,6 +250,7 @@ impl Default for ActivityBuilder {
             status_display_type: None,
             details: None,
             state: None,
+            instance: None,
             duration: None,
             large_image: None,
             large_text: None,
@@ -279,6 +286,12 @@ impl ActivityBuilder {
     /// Bottom text for your activity.
     pub fn state(mut self, text: impl Into<String>) -> Self {
         self.state = filter_none_string(text);
+        self
+    }
+
+    /// Sets the activity to be an instance.
+    pub fn is_instance(mut self) -> Self {
+        self.instance = Some(true);
         self
     }
 
@@ -347,6 +360,7 @@ impl ActivityBuilder {
             status_display_type: self.status_display_type,
             details: self.details,
             state: self.state,
+            instance: self.instance,
             duration: self.duration,
             large_image: self.large_image,
             large_text: self.large_text,
