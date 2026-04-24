@@ -12,6 +12,7 @@ New features:
 Internal changes:
 
 - Changed `do_verbose_errors` to `show_errors` inside `PresenceRunner`.
+- Removed unnecessary code from `DiscordSock::close` which was there for nothing in Windows-based targets.
 
 Bug fixes:
 
