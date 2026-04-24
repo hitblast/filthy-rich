@@ -7,7 +7,7 @@ Active since v0.8.5.
 New features:
 
 - Added: `ActivityBuilder::set_as_instance`
-- (Experimental) Added: `PresenceRunner::on_activity_send` which receives a closure to execute whenever an activity is sent through the connection.
+- (Experimental) Added: `PresenceRunner::on_activity_send` which receives a closure to execute whenever an activity is sent through the connection. Returns `ActivityResponseData` within the closure.
 
 ### v0.8.5
 

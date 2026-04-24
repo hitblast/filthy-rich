@@ -1,4 +1,3 @@
-use serde_json::Value;
 use std::{
     sync::{
         Arc,
@@ -13,7 +12,9 @@ use anyhow::{Result, anyhow, bail};
 use crate::{
     PresenceClient,
     socket::DiscordSock,
-    types::{Activity, DynamicRPCFrame, IPCCommand, ReadyData, ReadyRPCFrame},
+    types::{
+        Activity, ActivityResponseData, DynamicRPCFrame, IPCCommand, ReadyData, ReadyRPCFrame,
+    },
     utils::get_current_timestamp,
 };
 
@@ -26,7 +27,7 @@ pub struct PresenceRunner {
     client: PresenceClient,
     join_handle: Option<JoinHandle<Result<()>>>,
     on_ready: Option<Box<dyn Fn(ReadyData) + Send + Sync + 'static>>,
-    on_activity_send: Option<Box<dyn Fn(serde_json::Value) + Send + Sync + 'static>>,
+    on_activity_send: Option<Box<dyn Fn(ActivityResponseData) + Send + Sync + 'static>>,
     do_verbose_errors: bool,
 }
 
@@ -62,7 +63,10 @@ impl PresenceRunner {
     /// pass its data through the IPC channel.
     ///
     /// This event can fire multiple times based on how many activities you set.
-    pub fn on_activity_send<F: Fn(Value) + Send + Sync + 'static>(mut self, f: F) -> Self {
+    pub fn on_activity_send<F: Fn(ActivityResponseData) + Send + Sync + 'static>(
+        mut self,
+        f: F,
+    ) -> Self {
         self.on_activity_send = Some(Box::new(f));
         self
     }
@@ -223,6 +227,7 @@ impl PresenceRunner {
                                             } else if json.cmd.as_deref() == Some("SET_ACTIVITY") {
                                                 if let Some(f) = &on_activity_send {
                                                     if let Some(data) = json.data {
+                                                        let data: ActivityResponseData = serde_json::from_value(data)?;
                                                         f(data)
                                                     }
                                                 }

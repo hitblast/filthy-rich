@@ -9,12 +9,7 @@ async fn main() -> Result<()> {
     let mut runner = PresenceRunner::new("1463450870480900160")
         .on_ready(|data| println!("Connected to user: {}", data.user.username))
         .on_activity_send(|data| {
-            // here `data` is a dynamic `serde_json::Value` for convenient access with the Discord schema
-            //
-            let name = data.get("name").unwrap().to_string();
-            let platform = data.get("platform").unwrap().to_string();
-
-            println!("Activity sent to: {name} (running on {platform})")
+            println!("Activity sent to app: {} (running on {})\nMetadata: {}", data.name, data.platform, data.metadata)
         })
         .show_errors() // enables verbose error logging
     ;

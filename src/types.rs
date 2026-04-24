@@ -143,7 +143,19 @@ pub(crate) enum IPCCommand {
     Close,
 }
 
-/// An object which is passed during READY capture from Discord IPC instance.
+/// Data received in response from the server after sending a SET_ACTIVITY command.
+///
+/// Note that this struct doesn't fully cover the schema of the actual response since most of the fields
+/// that are found are the same as the actual activity that is sent.
+#[derive(Debug, Clone, Deserialize)]
+pub struct ActivityResponseData {
+    pub application_id: String,
+    pub platform: String,
+    pub name: String,
+    pub metadata: serde_json::Value,
+}
+
+/// Data received from READY event.
 #[derive(Debug, Clone, Deserialize)]
 pub struct ReadyData {
     pub user: DiscordUser,
