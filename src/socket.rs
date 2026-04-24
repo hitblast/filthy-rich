@@ -159,16 +159,10 @@ impl DiscordSock {
     }
 
     pub async fn close(self) -> Result<()> {
-        // read half: nothing to shutdown, just drop the guard
-        {
-            let _read = self.readhalf.lock().await;
-        }
-
         // write half: can shutdown
-        let mut write = self.writehalf.lock().await;
-
         #[cfg(target_family = "unix")]
         {
+            let mut write = self.writehalf.lock().await;
             write.flush().await?;
             write.shutdown().await?;
         }
