@@ -42,6 +42,7 @@ async fn main() -> Result<()> {
     let closing_activity = Activity::new()
         .details("closing presence in...")
         .duration(Duration::from_secs(5))
+        .small_image("status")
         .build();
 
     // first run
