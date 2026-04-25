@@ -44,7 +44,8 @@ struct ActivityCommandArgs {
 pub(crate) struct ActivityPayload {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    pub r#type: u8,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub r#type: Option<u8>,
     pub created_at: u64,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub instance: Option<bool>,
@@ -213,7 +214,7 @@ impl From<StatusDisplayType> for u8 {
 #[derive(Debug, Clone)]
 pub struct Activity {
     pub(crate) name: Option<String>,
-    pub(crate) activity_type: ActivityType,
+    pub(crate) activity_type: Option<ActivityType>,
     pub(crate) status_display_type: Option<StatusDisplayType>,
     pub(crate) details: Option<String>,
     pub(crate) state: Option<String>,
@@ -237,11 +238,32 @@ impl Activity {
     }
 }
 
+impl Default for Activity {
+    fn default() -> Self {
+        Self {
+            name: None,
+            activity_type: None,
+            status_display_type: None,
+            details: None,
+            state: None,
+            instance: None,
+            duration: None,
+            large_image: None,
+            large_text: None,
+            large_url: None,
+            small_image: None,
+            small_text: None,
+            small_url: None,
+            buttons: None,
+        }
+    }
+}
+
 /// A Rich Presence activity with top text and possibly more attributes.
 /// To build an [`Activity`] out of it, use [`ActivityBuilder::build`].
 pub struct ActivityBuilder {
     name: Option<String>,
-    activity_type: ActivityType,
+    activity_type: Option<ActivityType>,
     status_display_type: Option<StatusDisplayType>,
     instance: Option<bool>,
     details: Option<String>,
@@ -260,7 +282,7 @@ impl Default for ActivityBuilder {
     fn default() -> Self {
         Self {
             name: None,
-            activity_type: ActivityType::Playing,
+            activity_type: None,
             status_display_type: None,
             details: None,
             state: None,
@@ -287,7 +309,7 @@ impl ActivityBuilder {
     /// The type of activity you want to create.
     #[must_use]
     pub fn activity_type(mut self, r#type: ActivityType) -> Self {
-        self.activity_type = r#type;
+        self.activity_type = Some(r#type);
         self
     }
 
