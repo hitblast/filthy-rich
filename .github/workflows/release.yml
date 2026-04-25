@@ -42,7 +42,7 @@ jobs:
       - name: Publish to crates.io
         env:
           CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
-        run: cargo publish --token $CRATES_TOKEN
+        run: cargo publish --token $CRATES_TOKEN --allow-dirty
 
       - name: Create release
         uses: softprops/action-gh-release@v2
