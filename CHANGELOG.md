@@ -20,6 +20,10 @@ New/breaking features:
   - `large_image()`
   - `small_image()`
 
+Bug fixes:
+
+- Fixed incorrect serialization length for the `AssetsPayload` struct.
+
 Internal changes:
 
 - Documented more of the previously undocumented parts of the API.
