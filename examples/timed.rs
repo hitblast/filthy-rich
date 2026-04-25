@@ -57,9 +57,7 @@ async fn main() -> Result<()> {
 
     client.close().await?;
 
-    if !client.is_running() {
-        println!("Stopped.")
-    }
+    println!("Stopped.");
 
     Ok(())
 }

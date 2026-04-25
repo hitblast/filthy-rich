@@ -1,10 +1,4 @@
-use std::{
-    sync::{
-        Arc,
-        atomic::{AtomicBool, Ordering},
-    },
-    time::Duration,
-};
+use std::time::Duration;
 use tokio::{sync::mpsc, task::JoinHandle, time::sleep};
 
 use anyhow::{Result, anyhow, bail};
@@ -40,7 +34,6 @@ impl PresenceRunner {
         let client = PresenceClient {
             tx,
             client_id: client_id.to_string(),
-            running: Arc::new(AtomicBool::new(false)),
         };
 
         Self {
@@ -83,12 +76,11 @@ impl PresenceRunner {
     /// Run the runner.
     /// Must be called before any client handle operations.
     pub async fn run(&mut self, wait_for_ready: bool) -> Result<&PresenceClient> {
-        if self.client.running.swap(true, Ordering::Relaxed) {
+        if self.join_handle.is_some() {
             bail!(MULTIPLE_RUN_CALL_ERR)
         }
 
         let client_id = self.client.client_id.clone();
-        let running = self.client.running.clone();
         let show_errors = self.show_errors;
 
         let mut rx = self
@@ -110,7 +102,7 @@ impl PresenceRunner {
 
             let mut session_start: Option<u64> = None;
 
-            'outer: while running.load(Ordering::Relaxed) {
+            'outer: loop {
                 // initial connect
                 let mut socket = match DiscordSock::new().await {
                     Ok(s) => s,
@@ -212,7 +204,6 @@ impl PresenceRunner {
                                         },
                                         IPCCommand::Close { done }=> {
                                             let _ = socket.close().await;
-                                            running.store(false, Ordering::Relaxed);
                                             let _ = done.send(());
                                             break 'outer;
                                         }

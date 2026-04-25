@@ -1,7 +1,4 @@
-use std::sync::{
-    Arc,
-    atomic::{AtomicBool, Ordering},
-};
+use anyhow::anyhow;
 use tokio::sync::{mpsc::Sender, oneshot};
 
 use crate::types::{Activity, IPCCommand};
@@ -11,7 +8,6 @@ use crate::types::{Activity, IPCCommand};
 pub struct PresenceClient {
     pub(crate) tx: Sender<IPCCommand>,
     pub(crate) client_id: String,
-    pub(crate) running: Arc<AtomicBool>,
 }
 
 impl PresenceClient {
@@ -21,43 +17,38 @@ impl PresenceClient {
         self.client_id.clone()
     }
 
-    /// Checks if the task is running.
-    #[must_use]
-    pub fn is_running(&self) -> bool {
-        self.running.load(Ordering::Relaxed)
-    }
-
     /// Sets/updates the Discord Rich presence activity.
     /// The runner must be started before calling this.
     pub async fn set_activity(&self, activity: Activity) -> Result<(), anyhow::Error> {
-        if !self.is_running() {
-            anyhow::bail!("Call .run() before .set_activity() execution.");
-        }
-
         self.tx
             .send(IPCCommand::SetActivity {
                 activity: Box::new(activity),
             })
-            .await?;
+            .await
+            .map_err(|_| anyhow!("Connection has already been closed."))?;
+
         Ok(())
     }
 
     /// Clears a previously set Discord Rich Presence activity.
     pub async fn clear_activity(&self) -> Result<(), anyhow::Error> {
-        if self.is_running() {
-            self.tx.send(IPCCommand::ClearActivity).await?;
-        }
+        self.tx
+            .send(IPCCommand::ClearActivity)
+            .await
+            .map_err(|_| anyhow!("Connection has already been closed."))?;
 
         Ok(())
     }
 
     /// Closes the current connection if any.
     pub async fn close(&self) -> Result<(), anyhow::Error> {
-        if self.is_running() {
-            let (done_tx, done_rx) = oneshot::channel::<()>();
-            self.tx.send(IPCCommand::Close { done: done_tx }).await?;
-            done_rx.await?;
+        let (done_tx, done_rx) = oneshot::channel::<()>();
+
+        if let Err(_) = self.tx.send(IPCCommand::Close { done: done_tx }).await {
+            return Ok(());
         }
+
+        done_rx.await?;
 
         Ok(())
     }

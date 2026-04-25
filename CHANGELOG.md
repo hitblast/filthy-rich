@@ -2,15 +2,19 @@
 
 Active since v0.8.5.
 
-### v0.10.1
+### v0.11.0
+
+Breaking changes:
+
+- Removed `PresenceClient::running` (correlates to the first change listed in "Internal changes").
 
 Improvements of existing features:
 
-- `PresenceClient::close` is now blocking (guaranteed completion before anything else executes).
+- `PresenceClient::close` now blocks execution till the runner thread responds with a message.
 
 Internal changes:
 
-- `PresenceClient::is_running` now loads the `running` field with `Ordering::Relaxed`. Same goes for all other occurrences of the field in `PresenceRunner` as well.
+- Removed the `running` field from `PresenceClient` entirely; `mpsc` is now being used as the only source of truth for all inter-thread communications and executions.
 
 ### v0.10.0
 
