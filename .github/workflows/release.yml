@@ -31,7 +31,20 @@ jobs:
       - uses: mozilla-actions/sccache-action@v0.0.9
       - run: sccache --show-stats || true
 
+      - name: Extract latest changelog
+        id: changelog
+        run: |
+          awk '/^### v/ { if (found) exit; found=1 } found' CHANGELOG.md > latest.md
+          echo "notes<<EOF" >> $GITHUB_OUTPUT
+          cat latest.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
       - name: Publish to crates.io
         env:
           CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
         run: cargo publish --token $CRATES_TOKEN
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          body: ${{ steps.changelog.outputs.notes }}
