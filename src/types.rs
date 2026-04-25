@@ -83,7 +83,7 @@ impl Serialize for AssetsPayload {
     where
         S: serde::Serializer,
     {
-        let mut state = serializer.serialize_struct("AssetsPayload", 5)?;
+        let mut state = serializer.serialize_struct("AssetsPayload", 6)?;
 
         if let Some(v) = &self.large_image {
             state.serialize_field("large_image", v)?;
