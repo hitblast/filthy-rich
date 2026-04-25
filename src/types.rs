@@ -239,6 +239,11 @@ impl Activity {
 }
 
 impl Default for Activity {
+    /// Gives out an empty [`Activity`] with all of the default values. Essentially,
+    /// this only shows the name of the app and the elapsed time for the activity on
+    /// Discord. Useful when you only need a simple rich presence instance.
+    ///
+    /// For building a complete activity, using [`Activity::new`] is suggested instead.
     fn default() -> Self {
         Self {
             name: None,
