@@ -55,5 +55,8 @@ async fn main() -> Result<()> {
     client.set_activity(closing_activity).await?;
     sleep(Duration::from_secs(5)).await;
 
+    client.close().await?;
+    println!("{}", client.is_running());
+
     Ok(())
 }

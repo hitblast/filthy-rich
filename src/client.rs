@@ -24,7 +24,7 @@ impl PresenceClient {
     /// Checks if the task is running.
     #[must_use]
     pub fn is_running(&self) -> bool {
-        self.running.load(Ordering::SeqCst)
+        self.running.load(Ordering::Relaxed)
     }
 
     /// Sets/updates the Discord Rich presence activity.

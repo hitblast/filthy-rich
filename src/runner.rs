@@ -83,7 +83,7 @@ impl PresenceRunner {
     /// Run the runner.
     /// Must be called before any client handle operations.
     pub async fn run(&mut self, wait_for_ready: bool) -> Result<&PresenceClient> {
-        if self.client.running.swap(true, Ordering::SeqCst) {
+        if self.client.running.swap(true, Ordering::Relaxed) {
             bail!(MULTIPLE_RUN_CALL_ERR)
         }
 
@@ -110,7 +110,7 @@ impl PresenceRunner {
 
             let mut session_start: Option<u64> = None;
 
-            'outer: while running.load(Ordering::SeqCst) {
+            'outer: while running.load(Ordering::Relaxed) {
                 // initial connect
                 let mut socket = match DiscordSock::new().await {
                     Ok(s) => s,
@@ -212,7 +212,7 @@ impl PresenceRunner {
                                         },
                                         IPCCommand::Close => {
                                             let _ = socket.close().await;
-                                            running.store(false, Ordering::SeqCst);
+                                            running.store(false, Ordering::Relaxed);
                                             break 'outer;
                                         }
                                     }
