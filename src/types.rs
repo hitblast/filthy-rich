@@ -274,6 +274,7 @@ impl Default for Activity {
 
 /// A Rich Presence activity with top text and possibly more attributes.
 /// To build an [`Activity`] out of it, use [`ActivityBuilder::build`].
+#[derive(Default)]
 pub struct ActivityBuilder {
     name: Option<String>,
     activity_type: Option<ActivityType>,
@@ -293,28 +294,6 @@ pub struct ActivityBuilder {
     buttons: Option<HashMap<String, String>>,
 }
 
-impl Default for ActivityBuilder {
-    fn default() -> Self {
-        Self {
-            name: None,
-            activity_type: None,
-            status_display_type: None,
-            details: None,
-            details_url: None,
-            state: None,
-            state_url: None,
-            instance: None,
-            duration: None,
-            large_image: None,
-            large_text: None,
-            large_url: None,
-            small_image: None,
-            small_text: None,
-            small_url: None,
-            buttons: None,
-        }
-    }
-}
 
 impl ActivityBuilder {
     /// Name of the activity.
