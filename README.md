@@ -17,26 +17,25 @@
 // A sneak-peek into what you will be working with:
 //
 use anyhow::Result;
-use filthy_rich::{Activity, PresenceRunner};
+use filthy_rich::{PresenceRunner, types::Activity};
 
 #[tokio::main]
 async fn main() -> Result<()> {
     let mut runner = PresenceRunner::new("1463450870480900160");
 
     let activity = Activity::new()
-        .details("Playing a game")
-        .state("In menu")
-        .large_image("game_icon", Some("My Game"))
-        .small_image("status", Some("Online"))
+        .name("cool app name")
+        .details("Something?")
+        .state("Probably~")
         .build();
 
     let client = runner.run(true).await?;
     client.set_activity(activity).await?;
+
     runner.wait().await?;
 
     Ok(())
 }
-
 ```
 
 ### Bulletin
