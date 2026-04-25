@@ -4,7 +4,7 @@ Active since v0.8.5.
 
 ### v0.10.0
 
-New/breaking features:
+New / breaking features:
 
 - Add: `details_url` and `state_url` fields for `Activity`, `ActivityBuilder`, and other internal structs.
 - Add these new methods to `ActivityBuilder`:
