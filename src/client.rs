@@ -44,7 +44,12 @@ impl PresenceClient {
     pub async fn close(&self) -> Result<(), anyhow::Error> {
         let (done_tx, done_rx) = oneshot::channel::<()>();
 
-        if let Err(_) = self.tx.send(IPCCommand::Close { done: done_tx }).await {
+        if self
+            .tx
+            .send(IPCCommand::Close { done: done_tx })
+            .await
+            .is_err()
+        {
             return Ok(());
         }
 
