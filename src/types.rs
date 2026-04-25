@@ -145,9 +145,13 @@ pub(crate) struct DynamicRPCFrame {
 
 #[derive(Debug)]
 pub(crate) enum IPCCommand {
-    SetActivity { activity: Box<Activity> },
+    SetActivity {
+        activity: Box<Activity>,
+    },
     ClearActivity,
-    Close,
+    Close {
+        done: tokio::sync::oneshot::Sender<()>,
+    },
 }
 
 /// Data received in response from the server after sending a SET_ACTIVITY command.

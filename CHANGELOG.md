@@ -2,6 +2,16 @@
 
 Active since v0.8.5.
 
+### v0.10.1
+
+Improvements of existing features:
+
+- `PresenceClient::close` is now blocking (guaranteed completion before anything else executes).
+
+Internal changes:
+
+- `PresenceClient::is_running` now loads the `running` field with `Ordering::Relaxed`. Same goes for all other occurrences of the field in `PresenceRunner` as well.
+
 ### v0.10.0
 
 New / breaking features:

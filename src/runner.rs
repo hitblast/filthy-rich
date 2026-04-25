@@ -210,9 +210,10 @@ impl PresenceRunner {
                                                 break;
                                             }
                                         },
-                                        IPCCommand::Close => {
+                                        IPCCommand::Close { done }=> {
                                             let _ = socket.close().await;
                                             running.store(false, Ordering::Relaxed);
+                                            let _ = done.send(());
                                             break 'outer;
                                         }
                                     }

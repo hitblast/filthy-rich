@@ -56,7 +56,10 @@ async fn main() -> Result<()> {
     sleep(Duration::from_secs(5)).await;
 
     client.close().await?;
-    println!("{}", client.is_running());
+
+    if !client.is_running() {
+        println!("Stopped.")
+    }
 
     Ok(())
 }

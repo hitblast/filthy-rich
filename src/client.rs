@@ -2,7 +2,7 @@ use std::sync::{
     Arc,
     atomic::{AtomicBool, Ordering},
 };
-use tokio::sync::mpsc::Sender;
+use tokio::sync::{mpsc::Sender, oneshot};
 
 use crate::types::{Activity, IPCCommand};
 
@@ -54,7 +54,9 @@ impl PresenceClient {
     /// Closes the current connection if any.
     pub async fn close(&self) -> Result<(), anyhow::Error> {
         if self.is_running() {
-            self.tx.send(IPCCommand::Close).await?;
+            let (done_tx, done_rx) = oneshot::channel::<()>();
+            self.tx.send(IPCCommand::Close { done: done_tx }).await?;
+            done_rx.await?;
         }
 
         Ok(())
