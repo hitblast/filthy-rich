@@ -294,7 +294,6 @@ pub struct ActivityBuilder {
     buttons: Option<HashMap<String, String>>,
 }
 
-
 impl ActivityBuilder {
     /// Name of the activity.
     pub fn name(mut self, text: impl Into<String>) -> Self {
