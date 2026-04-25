@@ -2,6 +2,29 @@
 
 Active since v0.8.5.
 
+### v0.10.0
+
+New/breaking features:
+
+- Add: `details_url` and `state_url` fields for `Activity`, `ActivityBuilder`, and other internal structs.
+- Add these new methods to `ActivityBuilder`:
+  - `details_url()`
+  - `state_url()`
+  - `large_text()`
+  - `large_url()`
+  - `small_text()`
+  - `small_url()`
+- Modified the signatures of these builder functions within `ActivityBuilder` to adapt with the new methods added above:
+  - `details()`
+  - `state()`
+  - `large_image()`
+  - `small_image()`
+
+Internal changes:
+
+- Documented more of the previously undocumented parts of the API.
+- Implemented the `Default` trait for `Activity` for creating empty activities (previously known as `Activity::build_empty`).
+
 ### v0.9.0
 
 New features:

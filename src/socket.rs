@@ -210,7 +210,9 @@ impl DiscordSock {
             created_at: current_t,
             status_display_type: activity.status_display_type.map(|f| f.into()),
             details: activity.details,
+            details_url: activity.details_url,
             state: activity.state,
+            state_url: activity.state_url,
             instance: activity.instance,
             timestamps: TimestampPayload {
                 start: session_start,

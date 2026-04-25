@@ -54,7 +54,11 @@ pub(crate) struct ActivityPayload {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub details: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub details_url: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub state: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub state_url: Option<String>,
     pub timestamps: TimestampPayload,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub assets: Option<AssetsPayload>,
@@ -217,7 +221,9 @@ pub struct Activity {
     pub(crate) activity_type: Option<ActivityType>,
     pub(crate) status_display_type: Option<StatusDisplayType>,
     pub(crate) details: Option<String>,
+    pub(crate) details_url: Option<String>,
     pub(crate) state: Option<String>,
+    pub(crate) state_url: Option<String>,
     pub(crate) instance: Option<bool>,
     pub(crate) duration: Option<Duration>,
     pub(crate) large_image: Option<String>,
@@ -250,7 +256,9 @@ impl Default for Activity {
             activity_type: None,
             status_display_type: None,
             details: None,
+            details_url: None,
             state: None,
+            state_url: None,
             instance: None,
             duration: None,
             large_image: None,
@@ -272,7 +280,9 @@ pub struct ActivityBuilder {
     status_display_type: Option<StatusDisplayType>,
     instance: Option<bool>,
     details: Option<String>,
+    details_url: Option<String>,
     state: Option<String>,
+    state_url: Option<String>,
     duration: Option<Duration>,
     large_image: Option<String>,
     large_text: Option<String>,
@@ -290,7 +300,9 @@ impl Default for ActivityBuilder {
             activity_type: None,
             status_display_type: None,
             details: None,
+            details_url: None,
             state: None,
+            state_url: None,
             instance: None,
             duration: None,
             large_image: None,
@@ -324,9 +336,21 @@ impl ActivityBuilder {
         self
     }
 
+    /// URL for the top text of your activity.
+    pub fn details_url(mut self, url: impl Into<String>) -> Self {
+        self.details_url = filter_none_string(url);
+        self
+    }
+
     /// Bottom text for your activity.
     pub fn state(mut self, text: impl Into<String>) -> Self {
         self.state = filter_none_string(text);
+        self
+    }
+
+    /// URL for the bottom text of your activity.
+    pub fn state_url(mut self, url: impl Into<String>) -> Self {
+        self.state_url = filter_none_string(url);
         self
     }
 
@@ -368,28 +392,38 @@ impl ActivityBuilder {
     }
 
     /// Large image for your activity (e.g., game icon).
-    pub fn large_image(
-        mut self,
-        key: impl Into<String>,
-        text: Option<impl Into<String>>,
-        url: Option<impl Into<String>>,
-    ) -> Self {
+    pub fn large_image(mut self, key: impl Into<String>) -> Self {
         self.large_image = Some(key.into());
-        self.large_text = text.map(|t| t.into());
-        self.large_url = url.map(|t| t.into());
         self
     }
 
-    /// Small image for your activity (e.g., status icon).
-    pub fn small_image(
-        mut self,
-        key: impl Into<String>,
-        text: Option<impl Into<String>>,
-        url: Option<impl Into<String>>,
-    ) -> Self {
+    /// Text for the large image of your activity.
+    pub fn large_text(mut self, text: impl Into<String>) -> Self {
+        self.large_text = Some(text.into());
+        self
+    }
+
+    /// URL for the large image of your activity.
+    pub fn large_url(mut self, url: impl Into<String>) -> Self {
+        self.large_url = Some(url.into());
+        self
+    }
+
+    /// Small image for your activity (e.g., game icon).
+    pub fn small_image(mut self, key: impl Into<String>) -> Self {
         self.small_image = Some(key.into());
-        self.small_text = text.map(|t| t.into());
-        self.small_url = url.map(|t| t.into());
+        self
+    }
+
+    /// Text for the small image of your activity.
+    pub fn small_text(mut self, text: impl Into<String>) -> Self {
+        self.small_text = Some(text.into());
+        self
+    }
+
+    /// URL for the small image of your activity.
+    pub fn small_url(mut self, url: impl Into<String>) -> Self {
+        self.small_url = Some(url.into());
         self
     }
 
@@ -401,7 +435,9 @@ impl ActivityBuilder {
             activity_type: self.activity_type,
             status_display_type: self.status_display_type,
             details: self.details,
+            details_url: self.details_url,
             state: self.state,
+            state_url: self.state_url,
             instance: self.instance,
             duration: self.duration,
             large_image: self.large_image,

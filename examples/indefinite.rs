@@ -16,16 +16,17 @@ async fn main() -> Result<()> {
 
     let client = runner.run(true).await?;
 
+    // the activity can include any combination of builder function calls
     let activity = Activity::new()
         .activity_type(ActivityType::Playing)
         .details("epic game")
+        .details_url("https://github.com/hitblast")
         .status_display_type(StatusDisplayType::Details)
-        .large_image(
-            "game_icon",
-            Some("Playing a game"),
-            Some("https://hitblast.github.io/"),
-        )
-        .small_image("status", Some("Online"), None::<String>)
+        .large_image("game_icon")
+        .large_text("Playing a game")
+        .large_url("https://hitblast.github.io/")
+        .small_image("status")
+        .small_text("Online")
         .build();
 
     client.set_activity(activity).await?;
