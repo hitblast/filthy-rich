@@ -406,7 +406,7 @@ impl ActivityBuilder {
         self
     }
 
-    /// Parses the state of this builder into a usable [`Activity`] for you to pass through [`PresenceClient::set_activity`].
+    /// Parses the state of this builder into a usable [`Activity`] for you to pass through [`super::PresenceClient::set_activity`].
     #[must_use]
     pub fn build(self) -> Activity {
         Activity {
