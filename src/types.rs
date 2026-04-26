@@ -276,7 +276,7 @@ impl Default for Activity {
     }
 }
 
-/// A Rich Presence activity with top text and possibly more attributes.
+/// A builder for a Rich Presence activity.
 /// To build an [`Activity`] out of it, use [`ActivityBuilder::build`].
 #[derive(Default)]
 pub struct ActivityBuilder {
@@ -344,9 +344,6 @@ impl ActivityBuilder {
     }
 
     /// The status display type for the activity.
-    ///
-    /// Errors:
-    ///     Can error if `state` is missing and [`StatusDisplayType::State`] has been passed as the type.
     #[must_use]
     pub fn status_display_type(mut self, r#type: StatusDisplayType) -> Self {
         self.status_display_type = Some(r#type);

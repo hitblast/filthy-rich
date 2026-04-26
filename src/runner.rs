@@ -54,7 +54,7 @@ impl PresenceRunner {
         self
     }
 
-    /// Run a particular closure after ensuring that a [`PresenceClient::send_activity`] has successfully managed to
+    /// Run a particular closure after ensuring that a [`PresenceClient::set_activity`] has successfully managed to
     /// pass its data through the IPC channel.
     ///
     /// This event can fire multiple times based on how many activities you set.

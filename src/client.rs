@@ -3,7 +3,7 @@ use tokio::sync::{mpsc::Sender, oneshot};
 
 use crate::types::{Activity, IPCCommand};
 
-/// A client handle for communicating with the [`PresenceRunner`]'s inner loop.
+/// A client handle for communicating with [`PresenceRunner`] and its inner loop.
 #[derive(Debug, Clone)]
 pub struct PresenceClient {
     pub(crate) tx: Sender<IPCCommand>,
