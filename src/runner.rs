@@ -138,10 +138,10 @@ impl PresenceRunner {
                             if let Some(tx) = ready_tx.take() {
                                 let _ = tx.send(());
                             }
-                            if let Some(f) = &on_ready {
-                                if let Some(data) = json.data {
-                                    f(data);
-                                }
+                            if let Some(f) = &on_ready
+                                && let Some(data) = json.data
+                            {
+                                f(data);
                             }
                             break;
                         }
@@ -153,12 +153,12 @@ impl PresenceRunner {
                 }
 
                 // restore last activity (if any)
-                if let Some(activity) = &last_activity {
-                    if let Some(t) = session_start {
-                        if let Err(e) = socket.send_activity(activity.clone(), t).await {
-                            eprintln!("Discord RPC last activity restore error: {e}")
-                        }
-                    }
+                if let Some(activity) = &last_activity
+                    && let Some(t) = session_start
+                    && let Err(e) = socket.send_activity(activity.clone(), t).await
+                    && show_errors
+                {
+                    eprintln!("Discord RPC last activity restore error: {e}")
                 }
 
                 backoff = 1;
@@ -221,13 +221,11 @@ impl PresenceRunner {
                                         if let Ok(json) = serde_json::from_slice::<DynamicRPCFrame>(&frame.body) {
                                             if json.evt.as_deref() == Some("ERROR") && show_errors {
                                                 eprintln!("Discord RPC DynamicRPCFrame error: {:?}", json.data);
-                                            } else if json.cmd.as_deref() == Some("SET_ACTIVITY") {
-                                                if let Some(f) = &on_activity_send {
-                                                    if let Some(data) = json.data {
-                                                        let data: ActivityResponseData = serde_json::from_value(data)?;
-                                                        f(data)
-                                                    }
-                                                }
+                                            } else if json.cmd.as_deref() == Some("SET_ACTIVITY")
+                                                && let Some(f) = &on_activity_send
+                                                && let Some(data) = json.data {
+                                                    let data: ActivityResponseData = serde_json::from_value(data)?;
+                                                    f(data)
                                             }
                                         }
                                     }
