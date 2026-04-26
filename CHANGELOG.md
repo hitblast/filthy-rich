@@ -2,6 +2,14 @@
 
 Active since v0.8.5.
 
+### v0.11.1
+
+Internal changes:
+
+- Updated the MSRV for the crate to v1.85.0.
+- Basic internal syntax changes.
+- Fix documentation for some crate identities.
+
 ### v0.11.0
 
 Breaking changes:
