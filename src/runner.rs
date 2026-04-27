@@ -230,13 +230,14 @@ impl PresenceRunner {
                                         }
                                     }
                                     2 => break,
-                                    3
-                                        if let Err(e) = socket.send_frame(3, frame.body).await => {
+                                    3 => {
+                                        if let Err(e) = socket.send_frame(3, frame.body).await {
                                             if show_errors {
                                                 eprintln!("Discord RPC send_frame error: {e}");
                                             }
                                             break;
                                         }
+                                    }
                                     _ => {}
                                 }
                                 },
