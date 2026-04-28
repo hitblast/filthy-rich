@@ -2,6 +2,22 @@
 
 Active since v0.8.5.
 
+### v0.11.3
+
+Improvements:
+
+- Add support for `snapd` environments (thanks to @Sreehari425) [(see pull request)](https://github.com/hitblast/filthy-rich/pull/4).
+
+Bug fixes:
+
+- More MSRV-specific (1.85.0) syntax fixes.
+
+### v0.11.2
+
+Bug fixes:
+
+- Fixed critical compilation errors related to unstable features being pushed despite the MSRV being `1.85.0`.
+
 ### v0.11.1
 
 Internal changes:

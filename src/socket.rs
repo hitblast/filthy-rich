@@ -54,12 +54,14 @@ fn add_unix_candidates(candidates: &mut HashSet<String>, base_dir: &str) {
 
     if let Ok(entries) = std::fs::read_dir(base_dir) {
         for entry in entries.flatten() {
-            if let Ok(name) = entry.file_name().into_string()
-                && name.starts_with("snap.discord")
-                && let Ok(meta) = entry.metadata()
-                && meta.is_dir()
-            {
-                candidates.insert(format!("{base_dir}/{name}/discord-ipc-"));
+            if let Some(name) = entry.file_name().to_str() {
+                if name.starts_with("snap.discord") {
+                    if let Ok(meta) = entry.metadata() {
+                        if meta.is_dir() {
+                            candidates.insert(format!("{base_dir}/{name}/discord-ipc-"));
+                        }
+                    }
+                }
             }
         }
     }

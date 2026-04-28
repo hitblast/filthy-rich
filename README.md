@@ -47,7 +47,7 @@ async fn main() -> Result<()> {
 > Expect breaking changes before the `v1.0.0` release.
 
 > [!NOTE]
-> Requires Rust 1.82.0 or later (MSRV).
+> Requires Rust 1.85.0 or later (MSRV).
 
 ## Getting Started
 

@@ -1,0 +1,4 @@
+[toolchain]
+targets = ["x86_64-pc-windows-gnu"]
+channel = "1.85.0"
+components = ["rustfmt", "clippy", "rust-src"]
