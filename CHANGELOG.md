@@ -2,6 +2,12 @@
 
 Active since v0.8.5.
 
+### v0.11.2
+
+Bug fixes:
+
+- Fixed critical compilation errors related to unstable features being pushed despite the MSRV being `1.85.0`.
+
 ### v0.11.1
 
 Internal changes:
