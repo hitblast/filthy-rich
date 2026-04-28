@@ -4,8 +4,9 @@ use filthy_rich::PresenceRunner;
 #[tokio::main]
 async fn main() -> Result<()> {
     let mut runner = PresenceRunner::new("1463450870480900160")
-        .on_disconnect(|| {
-            eprintln!("discord rpc disconnected");
+        .show_errors()
+        .on_disconnect(|reason| {
+            eprintln!("discord rpc disconnected: {reason:?}");
         });
 
     runner.run(false).await?;

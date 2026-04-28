@@ -7,7 +7,8 @@ use crate::{
     PresenceClient,
     socket::DiscordSock,
     types::{
-        Activity, ActivityResponseData, DynamicRPCFrame, IPCCommand, ReadyData, ReadyRPCFrame,
+        Activity, ActivityResponseData, DisconnectReason, DynamicRPCFrame, IPCCommand, ReadyData,
+        ReadyRPCFrame,
     },
     utils::get_current_timestamp,
 };
@@ -22,7 +23,7 @@ pub struct PresenceRunner {
     join_handle: Option<JoinHandle<Result<()>>>,
     on_ready: Option<Box<dyn Fn(ReadyData) + Send + Sync + 'static>>,
     on_activity_send: Option<Box<dyn Fn(ActivityResponseData) + Send + Sync + 'static>>,
-    on_disconnect: Option<Box<dyn Fn() + Send + Sync + 'static>>,
+    on_disconnect: Option<Box<dyn Fn(DisconnectReason) + Send + Sync + 'static>>,
     show_errors: bool,
 }
 
@@ -71,7 +72,7 @@ impl PresenceRunner {
     /// Run a particular closure after the RPC connection is lost.
     ///
     /// This can fire multiple times if the client reconnects and disconnects again.
-    pub fn on_disconnect<F: Fn() + Send + Sync + 'static>(mut self, f: F) -> Self {
+    pub fn on_disconnect<F: Fn(DisconnectReason) + Send + Sync + 'static>(mut self, f: F) -> Self {
         self.on_disconnect = Some(Box::new(f));
         self
     }
@@ -177,7 +178,7 @@ impl PresenceRunner {
                 backoff = 1;
 
                 // generic loop for receiving commands and responding to pings from Discord itself
-                loop {
+                let disconnect_reason = loop {
                     tokio::select! {
                         biased;
 
@@ -201,7 +202,7 @@ impl PresenceRunner {
                                                 if show_errors {
                                                     eprintln!("Discord RPC send_activity error: {e}");
                                                 }
-                                                break;
+                                                break Some(DisconnectReason::SendActivityError(e.to_string()));
                                             }
                                         },
                                         IPCCommand::ClearActivity => {
@@ -212,7 +213,7 @@ impl PresenceRunner {
                                                 if show_errors {
                                                     eprintln!("Discord RPC clear_activity error: {e}");
                                                 }
-                                                break;
+                                                break Some(DisconnectReason::ClearActivityError(e.to_string()));
                                             }
                                         },
                                         IPCCommand::Close { done }=> {
@@ -222,7 +223,7 @@ impl PresenceRunner {
                                         }
                                     }
                                 },
-                                None => break,
+                                None => break Some(DisconnectReason::ClientChannelClosed),
                             }
                         }
 
@@ -242,13 +243,13 @@ impl PresenceRunner {
                                             }
                                         }
                                     }
-                                    2 => break,
+                                    2 => break Some(DisconnectReason::ServerClosed),
                                     3 => {
                                         if let Err(e) = socket.send_frame(3, frame.body).await {
                                             if show_errors {
                                                 eprintln!("Discord RPC send_frame error: {e}");
                                             }
-                                            break;
+                                            break Some(DisconnectReason::SendFrameError(e.to_string()));
                                         }
                                     }
                                     _ => {}
@@ -258,16 +259,21 @@ impl PresenceRunner {
                                     if show_errors {
                                         eprintln!("Discord RPC generic frame read error: {e}")
                                     }
-                                    break;
+                                    if let Some(io_err) = e.downcast_ref::<std::io::Error>()
+                                        && io_err.kind() == std::io::ErrorKind::UnexpectedEof
+                                    {
+                                        break Some(DisconnectReason::PeerClosed);
+                                    }
+                                    break Some(DisconnectReason::ReadFrameError(e.to_string()));
                                 },
                             }
                         }
                     }
-                }
+                };
 
                 if connected {
                     if let Some(f) = &on_disconnect {
-                        f();
+                        f(disconnect_reason.unwrap_or(DisconnectReason::Unknown));
                     }
                     connected = false;
                 }

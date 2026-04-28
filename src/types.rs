@@ -166,6 +166,19 @@ pub struct ActivityResponseData {
     pub metadata: serde_json::Value,
 }
 
+/// Details about why the RPC connection was lost.
+#[derive(Debug, Clone)]
+pub enum DisconnectReason {
+    PeerClosed,
+    ServerClosed,
+    ReadFrameError(String),
+    SendFrameError(String),
+    SendActivityError(String),
+    ClearActivityError(String),
+    ClientChannelClosed,
+    Unknown,
+}
+
 /// Data received from READY event.
 #[derive(Debug, Clone, Deserialize)]
 pub struct ReadyData {
