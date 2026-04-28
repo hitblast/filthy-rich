@@ -45,6 +45,24 @@ macro_rules! acquire {
     };
 }
 
+#[cfg(target_family = "unix")]
+fn add_unix_candidates(candidates: &mut HashSet<String>, base_dir: &str) {
+    candidates.insert(format!("{base_dir}/discord-ipc-")); // normal sane discord path
+    candidates.insert(format!("{base_dir}/app/com.discordapp.Discord/discord-ipc-")); // for flatpak 
+
+    if let Ok(entries) = std::fs::read_dir(base_dir) {
+        for entry in entries.flatten() {
+            if let Ok(name) = entry.file_name().into_string()
+                && name.starts_with("snap.discord")
+                && let Ok(meta) = entry.metadata()
+                && meta.is_dir()
+            {
+                candidates.insert(format!("{base_dir}/{name}/discord-ipc-"));
+            }
+        }
+    }
+}
+
 fn get_pipe_path() -> Option<PathBuf> {
     let mut candidates = HashSet::new();
 
@@ -52,15 +70,20 @@ fn get_pipe_path() -> Option<PathBuf> {
     candidates.insert(r"\\?\pipe\discord-ipc-".to_string());
 
     #[cfg(target_family = "unix")]
-    candidates.insert("/tmp/discord-ipc-".to_string());
+    {
+        add_unix_candidates(&mut candidates, "/tmp");
 
-    if let Ok(runtime_dir) = var("TMPDIR") {
-        candidates.insert(runtime_dir + "/discord-ipc-");
-    }
+        if let Ok(runtime_dir) = var("TMPDIR") {
+            add_unix_candidates(&mut candidates, &runtime_dir);
+        }
 
-    if let Ok(runtime_dir) = var("XDG_RUNTIME_DIR") {
-        candidates.insert(runtime_dir.clone() + "/app/com.discordapp.Discord/discord-ipc-");
-        candidates.insert(runtime_dir + "/discord-ipc-");
+        if let Ok(runtime_dir) = var("XDG_RUNTIME_DIR") {
+            add_unix_candidates(&mut candidates, &runtime_dir);
+        }
+
+        if let Ok(uid) = var("UID") {
+            add_unix_candidates(&mut candidates, &format!("/run/user/{uid}"));
+        }
     }
 
     for i in 0..10 {
