@@ -22,6 +22,7 @@ pub struct PresenceRunner {
     join_handle: Option<JoinHandle<Result<()>>>,
     on_ready: Option<Box<dyn Fn(ReadyData) + Send + Sync + 'static>>,
     on_activity_send: Option<Box<dyn Fn(ActivityResponseData) + Send + Sync + 'static>>,
+    on_disconnect: Option<Box<dyn Fn() + Send + Sync + 'static>>,
     show_errors: bool,
 }
 
@@ -42,6 +43,7 @@ impl PresenceRunner {
             join_handle: None,
             on_ready: None,
             on_activity_send: None,
+            on_disconnect: None,
             show_errors: false,
         }
     }
@@ -63,6 +65,14 @@ impl PresenceRunner {
         f: F,
     ) -> Self {
         self.on_activity_send = Some(Box::new(f));
+        self
+    }
+
+    /// Run a particular closure after the RPC connection is lost.
+    ///
+    /// This can fire multiple times if the client reconnects and disconnects again.
+    pub fn on_disconnect<F: Fn() + Send + Sync + 'static>(mut self, f: F) -> Self {
+        self.on_disconnect = Some(Box::new(f));
         self
     }
 
@@ -94,11 +104,13 @@ impl PresenceRunner {
         // executable closers (executed within the loop)
         let on_ready = self.on_ready.take();
         let on_activity_send = self.on_activity_send.take();
+        let on_disconnect = self.on_disconnect.take();
 
         let join_handle = tokio::spawn(async move {
             let mut backoff = 1;
             let mut last_activity: Option<Activity> = None;
             let mut ready_tx = Some(ready_tx);
+            let mut connected = false;
 
             let mut session_start: Option<u64> = None;
 
@@ -143,6 +155,7 @@ impl PresenceRunner {
                             {
                                 f(data);
                             }
+                            connected = true;
                             break;
                         }
 
@@ -250,6 +263,13 @@ impl PresenceRunner {
                             }
                         }
                     }
+                }
+
+                if connected {
+                    if let Some(f) = &on_disconnect {
+                        f();
+                    }
+                    connected = false;
                 }
 
                 sleep(Duration::from_secs(backoff)).await;
