@@ -48,7 +48,9 @@ macro_rules! acquire {
 #[cfg(target_family = "unix")]
 fn add_unix_candidates(candidates: &mut HashSet<String>, base_dir: &str) {
     candidates.insert(format!("{base_dir}/discord-ipc-")); // normal sane discord path
-    candidates.insert(format!("{base_dir}/app/com.discordapp.Discord/discord-ipc-")); // for flatpak 
+    candidates.insert(format!(
+        "{base_dir}/app/com.discordapp.Discord/discord-ipc-"
+    )); // for flatpak 
 
     if let Ok(entries) = std::fs::read_dir(base_dir) {
         for entry in entries.flatten() {
