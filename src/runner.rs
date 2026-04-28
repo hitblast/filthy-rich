@@ -263,10 +263,10 @@ impl PresenceRunner {
                                     if show_errors {
                                         eprintln!("Discord RPC generic frame read error: {e}")
                                     }
-                                    if let Some(io_err) = e.downcast_ref::<std::io::Error>()
-                                        && io_err.kind() == std::io::ErrorKind::UnexpectedEof
-                                    {
-                                        break Some(DisconnectReason::PeerClosed);
+                                    if let Some(io_err) = e.downcast_ref::<std::io::Error>() {
+                                        if io_err.kind() == std::io::ErrorKind::UnexpectedEof {
+                                            break Some(DisconnectReason::PeerClosed);
+                                        }
                                     }
                                     break Some(DisconnectReason::ReadFrameError(e.to_string()));
                                 },
