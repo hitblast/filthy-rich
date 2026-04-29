@@ -11,6 +11,7 @@ async fn main() -> Result<()> {
         .on_activity_send(|data| {
             println!("Activity sent to app: {} (running on {})\nMetadata: {}", data.name, data.platform, data.metadata)
         })
+        .on_disconnect(|f| println!("Disconnected: {f:?}"))
         .show_errors() // enables verbose error logging
     ;
 
