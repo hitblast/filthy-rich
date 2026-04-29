@@ -2,11 +2,17 @@
 
 Active since v0.8.5.
 
+### v0.12.0
+
+New features:
+
+- Added `on_disconnect` hook with a new `DisconnectReason` enum to compliment it (thanks to @Sreehari425) [(see pull request)](https://github.com/hitblast/filthy-rich/pull/5).
+
 ### v0.11.3
 
 Improvements:
 
-- Add support for `snapd` environments (thanks to @Sreehari425) [(see pull request)](https://github.com/hitblast/filthy-rich/pull/4).
+- Added support for `snapd` environments (thanks to @Sreehari425) [(see pull request)](https://github.com/hitblast/filthy-rich/pull/4).
 
 Bug fixes:
 
