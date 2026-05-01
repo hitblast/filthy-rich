@@ -7,6 +7,8 @@
 //! [`PresenceRunner`] - core runner for rich presence<br>
 //! [`PresenceClient`] - client/messenger instance used for sending activity and closing updates
 //!
+//! Extra types are stored in the `types` module whereas the error enums and their variants are in the `errors` module respectively.
+//!
 //! ## Looking for Discord's documentation?
 //!
 //! The groundwork of this project has been done using the official [Discord RPC documentation](https://docs.discord.com/developers/topics/rpc)
@@ -23,4 +25,6 @@ mod utils;
 
 pub use client::PresenceClient;
 pub use runner::PresenceRunner;
+
+pub mod errors;
 pub mod types;

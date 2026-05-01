@@ -1,4 +1,3 @@
-use anyhow::{Result, bail};
 use serde_json::json;
 use std::collections::HashSet;
 use std::env::var;
@@ -21,6 +20,8 @@ use tokio::{
     net::windows::named_pipe::{ClientOptions, NamedPipeClient},
 };
 
+#[cfg(target_family = "unix")]
+use crate::errors::DiscordSockError;
 use crate::types::{Activity, ActivityCommand, ActivityPayload, ButtonPayload, TimestampPayload};
 use crate::utils::get_current_timestamp;
 
@@ -125,20 +126,20 @@ impl DiscordSock {
     }
 
     #[cfg(target_family = "unix")]
-    async fn get_socket() -> Result<(ReadHalfCore, WriteHalfCore)> {
+    async fn get_socket() -> Result<(ReadHalfCore, WriteHalfCore), DiscordSockError> {
         let path = match get_pipe_path() {
             Some(p) => p,
-            None => bail!("Pipe not found."),
+            None => return Err(DiscordSockError::PipeNotFound),
         };
 
         if let Ok(socket) = UnixStream::connect(&path).await {
             return Ok(socket.into_split());
         }
 
-        bail!("Could not connect to pipe.")
+        Err(DiscordSockError::PipeConnectionFailed)
     }
 
-    pub async fn new() -> Result<Self> {
+    pub async fn new() -> Result<Self, DiscordSockError> {
         let result = Self::get_socket().await;
 
         match result {
@@ -146,23 +147,23 @@ impl DiscordSock {
                 readhalf: Arc::new(Mutex::new(readhalf)),
                 writehalf: Arc::new(Mutex::new(writehalf)),
             }),
-            Err(e) => bail!("Error while creating new IPC RPC socket: {e}"),
+            Err(e) => Err(e),
         }
     }
 
-    async fn read(&self, buffer: &mut [u8]) -> Result<()> {
+    async fn read(&self, buffer: &mut [u8]) -> Result<(), DiscordSockError> {
         acquire!(&self.readhalf, stream);
         stream.read_exact(buffer).await?;
         Ok(())
     }
 
-    pub async fn write<T: AsRef<[u8]>>(&self, buffer: T) -> Result<()> {
+    pub async fn write<T: AsRef<[u8]>>(&self, buffer: T) -> Result<(), DiscordSockError> {
         acquire!(&self.writehalf, stream);
         stream.write_all(buffer.as_ref()).await?;
         Ok(())
     }
 
-    pub async fn read_frame(&self) -> Result<Frame> {
+    pub async fn read_frame(&self) -> Result<Frame, DiscordSockError> {
         let mut header = [0u8; 8];
         self.read(&mut header).await?;
 
@@ -175,7 +176,11 @@ impl DiscordSock {
         Ok(Frame { opcode, body })
     }
 
-    pub async fn send_frame<T: AsRef<[u8]>>(&self, opcode: u32, body: T) -> Result<()> {
+    pub async fn send_frame<T: AsRef<[u8]>>(
+        &self,
+        opcode: u32,
+        body: T,
+    ) -> Result<(), DiscordSockError> {
         let mut header = Vec::with_capacity(8);
         header.extend_from_slice(&opcode.to_le_bytes());
         header.extend_from_slice(&(body.as_ref().len() as u32).to_le_bytes());
@@ -185,7 +190,7 @@ impl DiscordSock {
         Ok(())
     }
 
-    pub async fn close(self) -> Result<()> {
+    pub async fn close(self) -> Result<(), DiscordSockError> {
         // write half: can shutdown
         #[cfg(target_family = "unix")]
         {
@@ -205,7 +210,7 @@ impl DiscordSock {
         &mut self,
         activity: Activity,
         session_start: u64,
-    ) -> Result<()> {
+    ) -> Result<(), DiscordSockError> {
         let current_t = get_current_timestamp()?;
         let end_timestamp = activity.duration.map(|d| current_t + d.as_secs());
 
@@ -253,19 +258,19 @@ impl DiscordSock {
         Ok(())
     }
 
-    pub(crate) async fn clear_activity(&mut self) -> Result<()> {
+    pub(crate) async fn clear_activity(&mut self) -> Result<(), DiscordSockError> {
         let cmd = ActivityCommand::new_with(None);
         self.send_cmd(cmd).await?;
         Ok(())
     }
 
-    pub(crate) async fn do_handshake(&mut self, client_id: &str) -> Result<()> {
+    pub(crate) async fn do_handshake(&mut self, client_id: &str) -> Result<(), DiscordSockError> {
         let handshake = json!({ "v": 1, "client_id": client_id }).to_string();
         self.send_frame(0, handshake).await?;
         Ok(())
     }
 
-    async fn send_cmd(&mut self, cmd: ActivityCommand) -> Result<()> {
+    async fn send_cmd(&mut self, cmd: ActivityCommand) -> Result<(), DiscordSockError> {
         let cmd = cmd.to_json()?;
         self.send_frame(1, cmd).await?;
         Ok(())

@@ -1,4 +1,3 @@
-use anyhow::Result;
 use std::{
     sync::{
         Arc,
@@ -7,11 +6,11 @@ use std::{
     time::Duration,
 };
 
-use filthy_rich::{PresenceRunner, types::Activity};
+use filthy_rich::{PresenceRunner, errors::PresenceError, types::Activity};
 use tokio::time::sleep;
 
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() -> Result<(), PresenceError> {
     // simple atomic counter
     let count = Arc::new(AtomicU8::new(0));
 

@@ -1,12 +1,11 @@
 //! Core types related to filthy-rich. Used in conjunction with the core imports.
 //!
-use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize, ser::SerializeStruct};
 use serde_json::Value;
 use std::{collections::HashMap, time::Duration};
 use uuid::Uuid;
 
-use crate::utils::filter_none_string;
+use crate::{errors::InnerParsingError, utils::filter_none_string};
 
 #[derive(Debug, Serialize)]
 pub(crate) struct ActivityCommand {
@@ -27,8 +26,8 @@ impl ActivityCommand {
         }
     }
 
-    pub fn to_json(&self) -> Result<String> {
-        serde_json::to_string(self).context("Failed to serialize IPC activity command.")
+    pub fn to_json(&self) -> Result<String, InnerParsingError> {
+        serde_json::to_string(self).map_err(|e| InnerParsingError::SerializeFailed(e))
     }
 }
 
@@ -165,19 +164,6 @@ pub struct ActivityResponseData {
     pub platform: String,
     pub name: String,
     pub metadata: Value,
-}
-
-/// Details about why the RPC connection was lost.
-#[derive(Debug, Clone)]
-pub enum DisconnectReason {
-    PeerClosed,
-    ServerClosed,
-    ReadFrameError(String),
-    SendFrameError(String),
-    SendActivityError(String),
-    ClearActivityError(String),
-    ClientChannelClosed,
-    Unknown,
 }
 
 /// Data received from READY event.

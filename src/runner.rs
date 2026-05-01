@@ -1,26 +1,22 @@
 use std::time::Duration;
 use tokio::{sync::mpsc, task::JoinHandle, time::sleep};
 
-use anyhow::{Result, anyhow, bail};
-
 use crate::{
     PresenceClient,
+    errors::{DisconnectReason, DiscordSockError, PresenceRunnerError},
     socket::DiscordSock,
     types::{
-        Activity, ActivityResponseData, DisconnectReason, DynamicRPCFrame, IPCCommand, ReadyData,
-        ReadyRPCFrame,
+        Activity, ActivityResponseData, DynamicRPCFrame, IPCCommand, ReadyData, ReadyRPCFrame,
     },
     utils::get_current_timestamp,
 };
-
-const MULTIPLE_RUN_CALL_ERR: &str = "PresenceRunner::run() called more than once";
 
 /// A runner that manages the Discord RPC background task.
 /// Create a runner, configure it, run it to get a client handle, then clone the handle for sharing.
 pub struct PresenceRunner {
     rx: Option<tokio::sync::mpsc::Receiver<IPCCommand>>,
     client: PresenceClient,
-    join_handle: Option<JoinHandle<Result<()>>>,
+    join_handle: Option<JoinHandle<()>>,
     on_ready: Option<Box<dyn Fn(ReadyData) + Send + Sync + 'static>>,
     on_activity_send: Option<Box<dyn Fn(ActivityResponseData) + Send + Sync + 'static>>,
     on_disconnect: Option<Box<dyn Fn(DisconnectReason) + Send + Sync + 'static>>,
@@ -86,9 +82,12 @@ impl PresenceRunner {
 
     /// Run the runner.
     /// Must be called before any client handle operations.
-    pub async fn run(&mut self, wait_for_ready: bool) -> Result<&PresenceClient> {
+    pub async fn run(
+        &mut self,
+        wait_for_ready: bool,
+    ) -> Result<&PresenceClient, PresenceRunnerError> {
         if self.join_handle.is_some() {
-            bail!(MULTIPLE_RUN_CALL_ERR)
+            return Err(PresenceRunnerError::MultipleRun);
         }
 
         let client_id = self.client.client_id.clone();
@@ -97,7 +96,7 @@ impl PresenceRunner {
         let mut rx = self
             .rx
             .take()
-            .ok_or_else(|| anyhow!(MULTIPLE_RUN_CALL_ERR))?;
+            .ok_or_else(|| PresenceRunnerError::ReceiverError)?;
 
         // oneshot channel to signal when READY is received the first time
         let (ready_tx, ready_rx) = tokio::sync::oneshot::channel::<()>();
@@ -192,7 +191,7 @@ impl PresenceRunner {
                                             let session_start_unpacked = if let Some(s) = session_start {
                                                 s
                                             } else {
-                                                let t = get_current_timestamp()?;
+                                                let t = get_current_timestamp().unwrap_or_default();
                                                 session_start = Some(t);
                                                 t
                                             };
@@ -240,8 +239,11 @@ impl PresenceRunner {
                                             } else if json.cmd.as_deref() == Some("SET_ACTIVITY") {
                                                 if let Some(f) = &on_activity_send {
                                                     if let Some(data) = json.data {
-                                                        let data: ActivityResponseData = serde_json::from_value(data)?;
-                                                        f(data)
+                                                        let data = serde_json::from_value::<ActivityResponseData>(data);
+
+                                                        if let Ok(d) = data {
+                                                            f(d)
+                                                        }
                                                     }
                                                 }
                                             }
@@ -263,10 +265,18 @@ impl PresenceRunner {
                                     if show_errors {
                                         eprintln!("Discord RPC generic frame read error: {e}")
                                     }
-                                    if let Some(io_err) = e.downcast_ref::<std::io::Error>() {
-                                        if io_err.kind() == std::io::ErrorKind::UnexpectedEof {
-                                            break Some(DisconnectReason::PeerClosed);
-                                        }
+                                    // if let Some(io_err) = e.downcast_ref::<std::io::Error>() {
+                                    //     if io_err.kind() == std::io::ErrorKind::UnexpectedEof {
+                                    //         break Some(DisconnectReason::PeerClosed);
+                                    //     }
+                                    // }
+                                    match &e {
+                                        DiscordSockError::IoError(error) => {
+                                            if error.kind() == std::io::ErrorKind::UnexpectedEof {
+                                                break Some(DisconnectReason::PeerClosed);
+                                            }
+                                        },
+                                        _ => {}
                                     }
                                     break Some(DisconnectReason::ReadFrameError(e.to_string()));
                                 },
@@ -285,8 +295,6 @@ impl PresenceRunner {
                 sleep(Duration::from_secs(backoff)).await;
                 backoff = (backoff * 2).min(4);
             }
-
-            Ok(())
         });
 
         self.join_handle = Some(join_handle);
@@ -294,7 +302,7 @@ impl PresenceRunner {
         if wait_for_ready {
             match ready_rx.await {
                 Ok(()) => (),
-                Err(_) => bail!("Background task exited before READY."),
+                Err(_) => return Err(PresenceRunnerError::ExitBeforeReady),
             }
         }
 
@@ -308,9 +316,12 @@ impl PresenceRunner {
     }
 
     /// Waits for the IPC task to finish.
-    pub async fn wait(&mut self) -> Result<()> {
+    ///
+    /// NOTE: If there's no `join_handle` present, the function will do nothing and
+    /// just return blank.
+    pub async fn wait(&mut self) -> Result<(), PresenceRunnerError> {
         if let Some(handle) = self.join_handle.take() {
-            handle.await??;
+            handle.await?;
         }
 
         Ok(())

@@ -14,13 +14,12 @@
 </div>
 
 ```rust
-// A sneak-peek into what you will be working with:
-//
-use anyhow::Result;
-use filthy_rich::{PresenceRunner, types::Activity};
+//! A sneak-peek into what you will be working with:
+//!
+use filthy_rich::{PresenceRunner, errors::PresenceError, types::Activity};
 
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() -> Result<(), PresenceError> {
     let mut runner = PresenceRunner::new("1463450870480900160");
 
     let activity = Activity::new()
@@ -32,10 +31,12 @@ async fn main() -> Result<()> {
     let client = runner.run(true).await?;
     client.set_activity(activity).await?;
 
+    // indefinitely block here
     runner.wait().await?;
 
     Ok(())
 }
+
 ```
 
 ### Bulletin
