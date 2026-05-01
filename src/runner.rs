@@ -270,13 +270,10 @@ impl PresenceRunner {
                                     //         break Some(DisconnectReason::PeerClosed);
                                     //     }
                                     // }
-                                    match &e {
-                                        DiscordSockError::IoError(error) => {
-                                            if error.kind() == std::io::ErrorKind::UnexpectedEof {
-                                                break Some(DisconnectReason::PeerClosed);
-                                            }
-                                        },
-                                        _ => {}
+                                    if let DiscordSockError::IoError(error) = &e {
+                                        if error.kind() == std::io::ErrorKind::UnexpectedEof {
+                                            break Some(DisconnectReason::PeerClosed);
+                                        }
                                     }
                                     break Some(DisconnectReason::ReadFrameError(e.to_string()));
                                 },

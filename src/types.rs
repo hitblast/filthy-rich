@@ -27,7 +27,7 @@ impl ActivityCommand {
     }
 
     pub fn to_json(&self) -> Result<String, InnerParsingError> {
-        serde_json::to_string(self).map_err(|e| InnerParsingError::SerializeFailed(e))
+        serde_json::to_string(self).map_err(InnerParsingError::SerializeFailed)
     }
 }
 
