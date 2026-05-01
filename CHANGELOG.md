@@ -4,6 +4,9 @@ Active since v0.8.5.
 
 ### v0.13.0
 
+I don't know for how long I will be able to trust GitHub with my personal projects since its becoming so unstable with each passing day.
+Its quite uncertain - but for now, I guess you can enjoy these releases here :3
+
 New features:
 
 - Explicit error enums have been added with the new `errors` module - featuring `PresenceError` (unified), `PresenceClientError` and `PresenceRunnerError`, as well as some other internal error types for sockets.
