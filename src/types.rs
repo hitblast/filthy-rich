@@ -370,7 +370,10 @@ impl ActivityBuilder {
         self
     }
 
-    /// Add a button to the activity.
+    /// Adds a button to the activity.
+    ///
+    /// NOTE: The Discord desktop client may behave in such a way that the buttons may only be visible from anyone but the
+    /// connected user's side. This is a wonky feature and must be used with care.
     pub fn add_button(mut self, label: impl Into<String>, url: impl Into<String>) -> Self {
         if let Some(btns) = &mut self.buttons {
             btns.insert(label.into(), url.into());
