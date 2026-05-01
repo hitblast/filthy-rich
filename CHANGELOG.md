@@ -2,6 +2,16 @@
 
 Active since v0.8.5.
 
+### v0.13.0
+
+New features:
+
+- Explicit error enums have been added with the new `errors` module - featuring `PresenceError` (unified), `PresenceClientError` and `PresenceRunnerError`, as well as some other internal error types for sockets.
+
+Internal changes:
+
+- Replaced `anyhow` in the dependencies list with `thiserror`.
+
 ### v0.12.0
 
 New features:
