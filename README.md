@@ -103,6 +103,7 @@ Also, other implementations felt much more complex to me and also felt like they
 Thanks to the amazing contributors for adding to this repository:
 
 - [Sirokovsk](https://github.com/Sirokovsk)
+- [Sreehari425](https://github.com/Sreehari425)
 
 ## Changelog
 
