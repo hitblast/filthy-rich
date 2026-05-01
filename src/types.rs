@@ -2,6 +2,7 @@
 //!
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize, ser::SerializeStruct};
+use serde_json::Value;
 use std::{collections::HashMap, time::Duration};
 use uuid::Uuid;
 
@@ -140,7 +141,7 @@ pub(crate) struct DynamicRPCFrame {
     pub evt: Option<String>,
     #[allow(unused)]
     pub nonce: Option<String>,
-    pub data: Option<serde_json::Value>,
+    pub data: Option<Value>,
 }
 
 #[derive(Debug)]
@@ -163,7 +164,7 @@ pub struct ActivityResponseData {
     pub application_id: String,
     pub platform: String,
     pub name: String,
-    pub metadata: serde_json::Value,
+    pub metadata: Value,
 }
 
 /// Details about why the RPC connection was lost.
@@ -193,8 +194,7 @@ pub struct DiscordUser {
     pub global_name: Option<String>,
     pub discriminator: Option<String>,
     pub avatar: Option<String>,
-    // TODO: extend this into a deserializable struct (probably?)
-    pub avatar_decoration_data: Option<serde_json::Value>,
+    pub avatar_decoration_data: Option<Value>,
     pub bot: bool,
     pub flags: Option<u64>,
     pub premium_type: Option<u64>,
