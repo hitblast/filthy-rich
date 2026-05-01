@@ -1,6 +1,5 @@
 use serde_json::json;
 use std::collections::HashSet;
-use std::env::var;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -21,6 +20,8 @@ use tokio::{
 };
 
 #[cfg(target_family = "unix")]
+use std::env::var;
+
 use crate::errors::DiscordSockError;
 use crate::types::{Activity, ActivityCommand, ActivityPayload, ButtonPayload, TimestampPayload};
 use crate::utils::get_current_timestamp;
@@ -112,17 +113,17 @@ pub struct DiscordSock {
 
 impl DiscordSock {
     #[cfg(target_os = "windows")]
-    async fn get_socket() -> Result<(ReadHalfCore, WriteHalfCore)> {
+    async fn get_socket() -> Result<(ReadHalfCore, WriteHalfCore), DiscordSockError> {
         let path = match get_pipe_path() {
             Some(p) => p,
-            None => bail!("Pipe not found."),
+            None => return Err(DiscordSockError::PipeNotFound),
         };
         if let Ok(client) = ClientOptions::new().open(&path) {
             let (read_half, write_half) = tokio::io::split(client);
             return Ok((read_half, write_half));
         }
 
-        bail!("Could not connect to pipe.")
+        Err(DiscordSockError::PipeConnectionFailed)
     }
 
     #[cfg(target_family = "unix")]
