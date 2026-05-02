@@ -156,7 +156,7 @@ pub(crate) enum IPCCommand {
     },
     ClearActivity,
     Close {
-        done: tokio::sync::oneshot::Sender<()>,
+        done_tx: tokio::sync::oneshot::Sender<()>,
     },
 }
 

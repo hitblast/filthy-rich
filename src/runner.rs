@@ -217,9 +217,9 @@ impl PresenceRunner {
                                                 break Some(DisconnectReason::ClearActivityError(e.to_string()));
                                             }
                                         },
-                                        IPCCommand::Close { done }=> {
+                                        IPCCommand::Close { done_tx }=> {
                                             let _ = socket.close().await;
-                                            let _ = done.send(());
+                                            let _ = done_tx.send(());
                                             break 'outer;
                                         }
                                     }

@@ -22,10 +22,10 @@ impl PresenceClient {
     /// Sets/updates the Discord Rich presence activity.
     /// The runner must be started before calling this.
     pub async fn set_activity(&self, activity: Activity) -> Result<(), PresenceClientError> {
+        let activity = Box::new(activity);
+
         self.tx
-            .send(IPCCommand::SetActivity {
-                activity: Box::new(activity),
-            })
+            .send(IPCCommand::SetActivity { activity })
             .await
             .map_err(|_| PresenceClientError::ActivitySendError)?;
 
@@ -46,16 +46,10 @@ impl PresenceClient {
     pub async fn close(&self) -> Result<(), PresenceClientError> {
         let (done_tx, done_rx) = oneshot::channel::<()>();
 
-        if self
-            .tx
-            .send(IPCCommand::Close { done: done_tx })
-            .await
-            .is_err()
-        {
-            return Ok(());
+        match self.tx.send(IPCCommand::Close { done_tx }).await {
+            Ok(_) => done_rx.await?,
+            Err(_) => return Ok(()),
         }
-
-        done_rx.await?;
 
         Ok(())
     }
