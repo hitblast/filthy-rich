@@ -37,6 +37,12 @@ struct ActivityCommandArgs {
     activity: Option<ActivityPayload>,
 }
 
+#[derive(Serialize)]
+pub(crate) struct PresenceHandshake<'a> {
+    pub v: u8,
+    pub client_id: &'a str,
+}
+
 /// Payload that actually gets serialized for setting a rich presence activity.
 ///
 /// Reference: https://docs.discord.com/developers/events/gateway-events#activity-object

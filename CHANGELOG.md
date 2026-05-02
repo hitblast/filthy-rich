@@ -2,6 +2,12 @@
 
 Active since v0.8.5.
 
+### v0.13.3
+
+Internal changes / improvements:
+
+- Removed the `json!()` macro call from `DiscordSock::do_handshake` and replaced it with `PresenceHandshake<'_>`.
+
 ### v0.13.2
 
 Improvements:

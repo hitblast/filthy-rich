@@ -1,4 +1,3 @@
-use serde_json::json;
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -22,8 +21,10 @@ use tokio::{
 #[cfg(target_family = "unix")]
 use std::env::var;
 
-use crate::errors::DiscordSockError;
-use crate::types::{Activity, ActivityCommand, ActivityPayload, ButtonPayload, TimestampPayload};
+use crate::errors::{DiscordSockError, InnerParsingError};
+use crate::types::{
+    Activity, ActivityCommand, ActivityPayload, ButtonPayload, PresenceHandshake, TimestampPayload,
+};
 use crate::utils::get_current_timestamp;
 
 #[cfg(target_family = "windows")]
@@ -266,8 +267,10 @@ impl DiscordSock {
     }
 
     pub(crate) async fn do_handshake(&mut self, client_id: &str) -> Result<(), DiscordSockError> {
-        let handshake = json!({ "v": 1, "client_id": client_id }).to_string();
-        self.send_frame(0, handshake).await?;
+        let handshake = PresenceHandshake { v: 1, client_id };
+        let json = serde_json::to_string(&handshake).map_err(InnerParsingError::from)?;
+
+        self.send_frame(0, json).await?;
         Ok(())
     }
 
