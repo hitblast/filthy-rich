@@ -98,7 +98,11 @@ I don't want to bother myself with manually implementing Rich Presence everytime
 
 Also, other implementations felt much more complex to me and also felt like they lacked precise control. This is a more "spread-out" opinion and might hide the truth for some libraries, but yeah, nothing better than throwing your own luck into making yet another IPC RPC client.
 
-## Contributors
+## Contributing
+
+If you want to contribute to this project, be sure to follow the [contribution guidelines](./CONTRIBUTING.md) and prep your environment as mentioned before doing so. Thank you for showing your interest!
+
+### Contributors
 
 Thanks to the amazing contributors for adding to this repository:
 
