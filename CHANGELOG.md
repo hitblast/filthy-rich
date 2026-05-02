@@ -2,6 +2,12 @@
 
 Active since v0.8.5.
 
+### v0.13.2
+
+Improvements:
+
+- Much smaller `tokio` bundle (removed the `full` feature set in favor of a more intentional list of features).
+
 ### v0.13.1
 
 Bug fixes:
