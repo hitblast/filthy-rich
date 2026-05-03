@@ -7,9 +7,9 @@ use uuid::Uuid;
 
 use crate::{errors::InnerParsingError, utils::filter_none_string};
 
-#[derive(Debug, Serialize)]
+#[derive(Serialize)]
 pub(crate) struct ActivityCommand {
-    cmd: String,
+    cmd: &'static str,
     args: ActivityCommandArgs,
     nonce: String,
 }
@@ -17,7 +17,7 @@ pub(crate) struct ActivityCommand {
 impl ActivityCommand {
     pub fn new_with(activity: Option<ActivityPayload>) -> Self {
         Self {
-            cmd: "SET_ACTIVITY".to_string(),
+            cmd: "SET_ACTIVITY",
             args: ActivityCommandArgs {
                 pid: std::process::id(),
                 activity,
@@ -31,7 +31,7 @@ impl ActivityCommand {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Serialize)]
 struct ActivityCommandArgs {
     pid: u32,
     activity: Option<ActivityPayload>,
@@ -46,7 +46,7 @@ pub(crate) struct PresenceHandshake<'a> {
 /// Payload that actually gets serialized for setting a rich presence activity.
 ///
 /// Reference: https://docs.discord.com/developers/events/gateway-events#activity-object
-#[derive(Debug, Serialize)]
+#[derive(Serialize)]
 pub(crate) struct ActivityPayload {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -72,7 +72,6 @@ pub(crate) struct ActivityPayload {
     pub buttons: Option<Vec<ButtonPayload>>,
 }
 
-#[derive(Debug)]
 pub(crate) struct AssetsPayload {
     pub large_image: Option<String>,
     pub large_url: Option<String>,
@@ -117,29 +116,27 @@ impl Serialize for AssetsPayload {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Serialize)]
 pub(crate) struct ButtonPayload {
     pub label: String,
     pub url: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Serialize)]
 pub(crate) struct TimestampPayload {
     pub start: u64,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub end: Option<u64>,
 }
 
-/// An iteration of a frame primarily for interpreting received READY events.
-#[derive(Debug, Deserialize)]
+#[derive(Deserialize)]
 pub(crate) struct ReadyRPCFrame {
     pub cmd: Option<String>,
     pub evt: Option<String>,
     pub data: Option<ReadyData>,
 }
 
-/// An iteration of a frame for using throughout the generic read_frame loop.
-#[derive(Debug, Deserialize)]
+#[derive(Deserialize)]
 pub(crate) struct DynamicRPCFrame {
     #[allow(unused)]
     pub cmd: Option<String>,
@@ -149,7 +146,6 @@ pub(crate) struct DynamicRPCFrame {
     pub data: Option<Value>,
 }
 
-#[derive(Debug)]
 pub(crate) enum IPCCommand {
     SetActivity {
         activity: Box<Activity>,

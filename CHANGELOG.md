@@ -6,16 +6,18 @@ Active since v0.8.5.
 
 New features:
 
-- Add `PresenceRunner::on_retry` for accepting a closure to execute during socket creation / handshake retries. The returned `usize` value (through the closure parameter) indicates the amount of total retries done at the time of the closure's execution.
-- Add `PresenceRunner::set_max_retries` for enabling developers to set a custom retry count for socket creation / handshakes after which the runner instance should give up on connecting to Discord. By default this is set to `0` (indefinite) internally.
+- Added `PresenceRunner::on_retry` for accepting a closure to execute during socket creation / handshake retries. The returned `usize` value (through the closure parameter) indicates the amount of total retries done at the time of the closure's execution.
+- Added `PresenceRunner::set_max_retries` for enabling developers to set a custom retry count for socket creation / handshakes after which the runner instance should give up on connecting to Discord. By default this is set to `0` (indefinite) internally.
 
-Changes:
+API Changes:
 
 - `PresenceClient::client_id` now returns an `&str` instead of a cloned `String`.
 
 Internal changes / improvements:
 
-- Removed the `json!()` macro call from `DiscordSock::do_handshake` and replaced it with `PresenceHandshake<'_>`.
+- Removed the `json!()` macro call from `DiscordSock::do_handshake` and replaced it with `PresenceHandshake`.
+- Removed unused derive macros from several structs in the `types` module.
+- Minor optimizations have been done to `ActivityCommand`.
 
 ### v0.13.2
 
@@ -89,8 +91,8 @@ Internal changes:
 
 New / breaking features:
 
-- Add: `details_url` and `state_url` fields for `Activity`, `ActivityBuilder`, and other internal structs.
-- Add these new methods to `ActivityBuilder`:
+- Added: `details_url` and `state_url` fields for `Activity`, `ActivityBuilder`, and other internal structs.
+- Added these new methods to `ActivityBuilder`:
   - `details_url()`
   - `state_url()`
   - `large_text()`
@@ -132,7 +134,7 @@ Bug fixes:
 
 New features:
 
-- Add `PresenceRunner::show_errors()` which can be used to enable verbose error logging for the runner.
+- Added `PresenceRunner::show_errors()` which can be used to enable verbose error logging for the runner.
 - `ActivityBuilder::small_image` and `ActivityBuilder::large_image` now have new `url` fields for them.
 
 Improvements of existing features:
