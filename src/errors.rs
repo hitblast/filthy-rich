@@ -62,6 +62,8 @@ pub(crate) enum DiscordSockError {
     IoError(#[from] std::io::Error),
     #[error("failed to convert to u32 from_le_bytes: {0}")]
     TryFromSliceError(#[from] TryFromSliceError),
+    #[error("payload size {size} exceeds maximum allowed size {max}")]
+    PayloadTooLarge { size: usize, max: usize },
     #[error("failed to parse: {0}")]
     ParseError(#[from] InnerParsingError),
 }
