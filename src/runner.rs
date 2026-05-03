@@ -99,6 +99,7 @@ impl PresenceRunner {
     /// Sets the amount of maximum retries to do on socket creation and handshakes before the runner should give up.
     ///
     /// By default this is set to `0` internally, which means the inner loop would retry indefinitely.
+    #[must_use]
     pub fn set_max_retries(mut self, count: usize) -> Self {
         self.max_retries = count;
         self
