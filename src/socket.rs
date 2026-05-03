@@ -44,6 +44,9 @@ pub struct Frame {
     pub body: Bytes,
 }
 
+//  Defaults to 16 Mib (just an assumption), this can be changed later
+const MAX_FRAME_SIZE: usize = 16 * 1024 * 1024;
+
 macro_rules! acquire {
     ($s:expr, $x:ident) => {
         let mut $x = $s.lock().await;
@@ -174,8 +177,15 @@ impl DiscordSock {
         let opcode = u32::from_le_bytes(header[0..4].try_into()?);
         let len = u32::from_le_bytes(header[4..8].try_into()?) as usize;
 
+        if len > MAX_FRAME_SIZE {
+            return Err(DiscordSockError::PayloadTooLarge {
+                size: len,
+                max: MAX_FRAME_SIZE,
+            });
+        }
+
         let mut body = BytesMut::with_capacity(len);
-        unsafe { body.set_len(len) };
+        body.resize(len, 0);
         self.read_exact(&mut body).await?;
 
         Ok(Frame {
@@ -190,10 +200,16 @@ impl DiscordSock {
         body: T,
     ) -> Result<(), DiscordSockError> {
         let body = body.as_ref();
+        if body.len() > u32::MAX as usize {
+            return Err(DiscordSockError::PayloadTooLarge {
+                size: body.len(),
+                max: u32::MAX as usize,
+            });
+        }
         let mut buf = BytesMut::with_capacity(8 + body.len());
 
         buf.extend_from_slice(&opcode.to_le_bytes());
-        buf.extend_from_slice(&(body.as_ref().len() as u32).to_le_bytes());
+        buf.extend_from_slice(&(body.len() as u32).to_le_bytes());
         buf.extend_from_slice(body);
 
         self.write(buf.freeze()).await?;
