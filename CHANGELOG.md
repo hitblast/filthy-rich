@@ -2,16 +2,21 @@
 
 Active since v0.8.5.
 
-### v0.13.3
+### v0.14.0
 
 New features:
 
 - Added `PresenceRunner::on_retry` for accepting a closure to execute during socket creation / handshake retries. The returned `usize` value (through the closure parameter) indicates the amount of total retries done at the time of the closure's execution.
 - Added `PresenceRunner::set_max_retries` for enabling developers to set a custom retry count for socket creation / handshakes after which the runner instance should give up on connecting to Discord. By default this is set to `0` (indefinite) internally.
 
-API Changes:
+Bug fixes:
+
+- Fixed a bug which had prevented the closure passed through `on_activity_send` from firing due to improper fields in arRPC.
+
+API changes:
 
 - `PresenceClient::client_id` now returns an `&str` instead of a cloned `String`.
+- All fields for the `ActivityResponseData` struct have been made optional.
 
 Internal changes / improvements:
 

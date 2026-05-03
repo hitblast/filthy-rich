@@ -159,12 +159,15 @@ pub(crate) enum IPCCommand {
 ///
 /// Note that this struct doesn't fully cover the schema of the actual response since most of the fields
 /// that are found are the same as the actual activity that is sent.
+///
+/// More importantly, open-source implementations of RPC (e.g. arRPC) have different response styles so
+/// the actual output of this struct may vary depending on what client you are using.
 #[derive(Debug, Clone, Deserialize)]
 pub struct ActivityResponseData {
-    pub application_id: String,
-    pub platform: String,
-    pub name: String,
-    pub metadata: Value,
+    pub application_id: Option<String>,
+    pub platform: Option<String>,
+    pub name: Option<String>,
+    pub metadata: Option<Value>,
 }
 
 /// Data received from READY event.
