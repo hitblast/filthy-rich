@@ -23,7 +23,8 @@ use std::env::var;
 
 use crate::errors::{DiscordSockError, InnerParsingError};
 use crate::types::{
-    Activity, ActivityCommand, ActivityPayload, ButtonPayload, PresenceHandshake, TimestampPayload,
+    Activity, ActivityCommand, ActivityPayload, AssetsPayload, ButtonPayload, PresenceHandshake,
+    TimestampPayload,
 };
 use crate::utils::get_current_timestamp;
 
@@ -216,28 +217,6 @@ impl DiscordSock {
         let current_t = get_current_timestamp()?;
         let end_timestamp = activity.duration.map(|d| current_t + d.as_secs());
 
-        let assets = if activity.large_image.is_some() || activity.small_image.is_some() {
-            Some(crate::types::AssetsPayload {
-                large_image: activity.large_image,
-                large_text: activity.large_text,
-                large_url: activity.large_url,
-                small_image: activity.small_image,
-                small_text: activity.small_text,
-                small_url: activity.small_url,
-            })
-        } else {
-            None
-        };
-
-        let buttons: Option<Vec<ButtonPayload>> = activity.buttons.map(|btns| {
-            btns.into_iter()
-                .map(|f| ButtonPayload {
-                    label: f.0,
-                    url: f.1,
-                })
-                .collect()
-        });
-
         let cmd = ActivityCommand::new_with(Some(ActivityPayload {
             name: activity.name,
             r#type: activity.activity_type.map(|f| f.into()),
@@ -252,8 +231,22 @@ impl DiscordSock {
                 start: session_start,
                 end: end_timestamp,
             },
-            assets,
-            buttons,
+            assets: AssetsPayload {
+                large_image: activity.large_image,
+                large_text: activity.large_text,
+                large_url: activity.large_url,
+                small_image: activity.small_image,
+                small_text: activity.small_text,
+                small_url: activity.small_url,
+            },
+            buttons: activity.buttons.map(|btns| {
+                btns.into_iter()
+                    .map(|f| ButtonPayload {
+                        label: f.0,
+                        url: f.1,
+                    })
+                    .collect()
+            }),
         }));
 
         self.send_cmd(cmd).await?;

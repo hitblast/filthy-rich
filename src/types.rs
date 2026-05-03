@@ -66,8 +66,7 @@ pub(crate) struct ActivityPayload {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub state_url: Option<String>,
     pub timestamps: TimestampPayload,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub assets: Option<AssetsPayload>,
+    pub assets: AssetsPayload,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub buttons: Option<Vec<ButtonPayload>>,
 }
