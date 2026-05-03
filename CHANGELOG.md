@@ -20,6 +20,8 @@ API changes:
 
 Internal changes / improvements:
 
+- Use `BytesMut`/`Bytes` instead of standard `Vec<u8>` in places (added a new `bytes` crate to the dependencies list).
+- Removed multiple writes from `send_frame` and instead merged them into a single logical write.
 - Removed the `json!()` macro call from `DiscordSock::do_handshake` and replaced it with `PresenceHandshake`.
 - Removed unused derive macros from several structs in the `types` module.
 - Minor optimizations have been done to `ActivityCommand`.
@@ -38,7 +40,7 @@ Bug fixes:
 
 ### v0.13.0
 
-I don't know for how long I would be able to trust GitHub with my personal projects since its becoming so unstable with each passing day. Its quite uncertain - but for now, I guess you can enjoy these releases here :3
+I don't know for how long I would be able to trust GitHub with my personal projects since its becoming so unstable with each passing day. Its quite uncertain - but for now, I guess you can enjoy these releases here. :3
 
 New features:
 

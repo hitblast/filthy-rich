@@ -10,7 +10,8 @@ It is expected that you know the following things at a basic level:
   - knowing when to stop using Rust concurrency
 - Formatting:
   - `cargo clippy` and `cargo fmt` to keep up with the generic styling format
-- Rust toolchains
+- Rust toolchains:
+  - This crate is compatible with multiple platforms and toolchains (different versions of Rust), so, you may sometimes need to test your features via cross-compilation before you even hit the "Submit Pull Request" button.
 
 ### Getting Started
 
@@ -42,6 +43,12 @@ In short:
 
 - `PresenceRunner` hosts the core loop and its `JoinHandle` to provide a fixed interface to the IPC connection.
 - `PresenceClient` is used to communicate with the core loop executed by `PresenceRunner` in the form of messages and oneshot signals.
+
+### A Note on Undocumented Items
+
+Sometimes I leave internal APIs (not re-exported to the outside world) undocumented only for the sake of spotting them easily. In that case, I often times write the code in such a way that it doesn't necessarily *need* any documentation to explain itsef.
+
+Maybe have it in mind when contributing to this library. :3
 
 ### Obeying Format
 

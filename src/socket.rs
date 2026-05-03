@@ -2,6 +2,7 @@ use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+use bytes::{Bytes, BytesMut};
 #[cfg(target_family = "unix")]
 use tokio::net::unix::{OwnedReadHalf, OwnedWriteHalf};
 
@@ -40,7 +41,7 @@ type WriteHalfCore = OwnedWriteHalf;
 
 pub struct Frame {
     pub opcode: u32,
-    pub body: Vec<u8>,
+    pub body: Bytes,
 }
 
 macro_rules! acquire {
@@ -154,7 +155,7 @@ impl DiscordSock {
         }
     }
 
-    async fn read(&self, buffer: &mut [u8]) -> Result<(), DiscordSockError> {
+    async fn read_exact(&self, buffer: &mut [u8]) -> Result<(), DiscordSockError> {
         acquire!(&self.readhalf, stream);
         stream.read_exact(buffer).await?;
         Ok(())
@@ -168,15 +169,19 @@ impl DiscordSock {
 
     pub async fn read_frame(&self) -> Result<Frame, DiscordSockError> {
         let mut header = [0u8; 8];
-        self.read(&mut header).await?;
+        self.read_exact(&mut header).await?;
 
         let opcode = u32::from_le_bytes(header[0..4].try_into()?);
         let len = u32::from_le_bytes(header[4..8].try_into()?) as usize;
 
-        let mut body = vec![0u8; len];
-        self.read(&mut body).await?;
+        let mut body = BytesMut::with_capacity(len);
+        unsafe { body.set_len(len) };
+        self.read_exact(&mut body).await?;
 
-        Ok(Frame { opcode, body })
+        Ok(Frame {
+            opcode,
+            body: body.freeze(),
+        })
     }
 
     pub async fn send_frame<T: AsRef<[u8]>>(
@@ -184,12 +189,14 @@ impl DiscordSock {
         opcode: u32,
         body: T,
     ) -> Result<(), DiscordSockError> {
-        let mut header = Vec::with_capacity(8);
-        header.extend_from_slice(&opcode.to_le_bytes());
-        header.extend_from_slice(&(body.as_ref().len() as u32).to_le_bytes());
+        let body = body.as_ref();
+        let mut buf = BytesMut::with_capacity(8 + body.len());
 
-        self.write(&header).await?;
-        self.write(body).await?;
+        buf.extend_from_slice(&opcode.to_le_bytes());
+        buf.extend_from_slice(&(body.as_ref().len() as u32).to_le_bytes());
+        buf.extend_from_slice(body);
+
+        self.write(buf.freeze()).await?;
         Ok(())
     }
 
