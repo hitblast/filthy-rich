@@ -4,6 +4,11 @@ Active since v0.8.5.
 
 ### v0.13.3
 
+New features:
+
+- Add `PresenceRunner::on_retry` for accepting a closure to execute during socket creation / handshake retries. The returned `usize` value (through the closure parameter) indicates the amount of total retries done at the time of the closure's execution.
+- Add `PresenceRunner::set_max_retries` for enabling developers to set a custom retry count for socket creation / handshakes after which the runner instance should give up on connecting to Discord. By default this is set to `0` (indefinite) internally.
+
 Internal changes / improvements:
 
 - Removed the `json!()` macro call from `DiscordSock::do_handshake` and replaced it with `PresenceHandshake<'_>`.

@@ -15,8 +15,8 @@ pub struct PresenceClient {
 impl PresenceClient {
     /// Returns the client ID.
     #[must_use]
-    pub fn client_id(&self) -> String {
-        self.client_id.clone()
+    pub fn client_id(&self) -> &str {
+        &self.client_id
     }
 
     /// Sets/updates the Discord Rich presence activity.

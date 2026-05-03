@@ -9,11 +9,18 @@ async fn main() -> Result<(), PresenceError> {
     let mut runner = PresenceRunner::new("1463450870480900160")
         .on_ready(|data| println!("Connected to user: {}", data.user.username))
         .on_activity_send(|data| {
-            println!("Activity sent to app: {} (running on {})\nMetadata: {}", data.name, data.platform, data.metadata)
+            println!(
+                "Activity sent to app: {} (running on {})\nMetadata: {}",
+                data.name, data.platform, data.metadata
+            )
         })
         .on_disconnect(|f| println!("Disconnected: {f:?}"))
         .show_errors() // enables verbose error logging
-    ;
+        .on_retry(move |c| {
+            if c % 10 == 0 {
+                println!("Retry count {c}; is Discord open?");
+            }
+        });
 
     let client = runner.run(true).await?;
 

@@ -20,7 +20,9 @@ pub struct PresenceRunner {
     on_ready: Option<Box<dyn Fn(ReadyData) + Send + Sync + 'static>>,
     on_activity_send: Option<Box<dyn Fn(ActivityResponseData) + Send + Sync + 'static>>,
     on_disconnect: Option<Box<dyn Fn(DisconnectReason) + Send + Sync + 'static>>,
+    on_retry: Option<Box<dyn Fn(usize) + Send + Sync + 'static>>,
     show_errors: bool,
+    max_retries: usize,
 }
 
 impl PresenceRunner {
@@ -41,20 +43,23 @@ impl PresenceRunner {
             on_ready: None,
             on_activity_send: None,
             on_disconnect: None,
+            on_retry: None,
             show_errors: false,
+            max_retries: 0,
         }
     }
 
     /// Run a particular closure after receiving the READY event from the Discord RPC server.
     ///
-    /// This event can fire multiple times depending on how many times the client needs to reconnect with Discord RPC.
+    /// This event can fire multiple times depending on how many times the client needs to
+    /// reconnect with the Discord RPC server.
     pub fn on_ready<F: Fn(ReadyData) + Send + Sync + 'static>(mut self, f: F) -> Self {
         self.on_ready = Some(Box::new(f));
         self
     }
 
-    /// Run a particular closure after ensuring that a [`PresenceClient::set_activity`] has successfully managed to
-    /// pass its data through the IPC channel.
+    /// Run a particular closure after ensuring that a [`PresenceClient::set_activity`]
+    /// has successfully managed to pass its data through the IPC channel.
     ///
     /// This event can fire multiple times based on how many activities you set.
     pub fn on_activity_send<F: Fn(ActivityResponseData) + Send + Sync + 'static>(
@@ -73,10 +78,29 @@ impl PresenceRunner {
         self
     }
 
+    /// Run a particular closure when retrying for socket creation or handshake.
+    ///
+    /// This can fire multiple times, or for a limited amount of time depending on whether or not
+    /// an amount of maximum retries has been passed through [`PresenceRunner::set_max_retries`].
+    ///
+    /// The closure parameter is the count of retries done at the time of its execution.
+    pub fn on_retry<F: Fn(usize) + Send + Sync + 'static>(mut self, f: F) -> Self {
+        self.on_retry = Some(Box::new(f));
+        self
+    }
+
     /// Enable verbose error logging for RPC and code events.
     #[must_use]
     pub fn show_errors(mut self) -> Self {
         self.show_errors = true;
+        self
+    }
+
+    /// Sets the amount of maximum retries to do on socket creation and handshakes before the runner should give up.
+    ///
+    /// By default this is set to `0` internally, which means the inner loop would retry indefinitely.
+    pub fn set_max_retries(mut self, count: usize) -> Self {
+        self.max_retries = count;
         self
     }
 
@@ -92,6 +116,7 @@ impl PresenceRunner {
 
         let client_id = self.client.client_id.clone();
         let show_errors = self.show_errors;
+        let max_retries = self.max_retries;
 
         let mut rx = self
             .rx
@@ -105,21 +130,33 @@ impl PresenceRunner {
         let on_ready = self.on_ready.take();
         let on_activity_send = self.on_activity_send.take();
         let on_disconnect = self.on_disconnect.take();
+        let on_retry = self.on_retry.take();
 
         let join_handle = tokio::spawn(async move {
             let mut backoff = 1;
             let mut last_activity: Option<Activity> = None;
             let mut ready_tx = Some(ready_tx);
             let mut connected = false;
+            let mut retries = 0;
 
             let mut session_start: Option<u64> = None;
 
             'outer: loop {
+                if max_retries != 0 && retries == max_retries {
+                    break;
+                }
+
                 // initial connect
                 let mut socket = match DiscordSock::new().await {
                     Ok(s) => s,
                     Err(_) => {
                         sleep(Duration::from_secs(backoff)).await;
+
+                        retries += 1;
+                        if let Some(f) = &on_retry {
+                            f(retries)
+                        }
+
                         continue;
                     }
                 };
@@ -127,6 +164,12 @@ impl PresenceRunner {
                 // initial handshake
                 if socket.do_handshake(&client_id).await.is_err() {
                     sleep(Duration::from_secs(backoff)).await;
+
+                    retries += 1;
+                    if let Some(f) = &on_retry {
+                        f(retries)
+                    }
+
                     continue;
                 }
 
@@ -177,6 +220,7 @@ impl PresenceRunner {
                 }
 
                 backoff = 1;
+                retries = 0;
 
                 // generic loop for receiving commands and responding to pings from Discord itself
                 let disconnect_reason = loop {
