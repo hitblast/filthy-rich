@@ -46,7 +46,7 @@ pub(crate) struct PresenceHandshake<'a> {
     pub client_id: &'a str,
 }
 
-/// A complete Rich Presence activity which can be sent to [`PresenceClient::set_activity`].
+/// A complete Rich Presence activity which can be sent to [`super::PresenceClient::set_activity`].
 #[derive(Serialize, Default, Clone)]
 pub struct SendableActivity {
     #[serde(skip_serializing_if = "Option::is_none")]
