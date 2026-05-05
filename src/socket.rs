@@ -34,12 +34,42 @@ type ReadHalfCore = OwnedReadHalf;
 #[cfg(target_family = "unix")]
 type WriteHalfCore = OwnedWriteHalf;
 
+#[repr(u32)]
+pub enum Opcode {
+    Handshake = 0,
+    Frame = 1,
+    Close = 2,
+    Ping = 3,
+    Pong = 4,
+}
+
+impl From<Opcode> for u32 {
+    fn from(value: Opcode) -> Self {
+        value as u32
+    }
+}
+
+impl TryFrom<u32> for Opcode {
+    type Error = ();
+
+    fn try_from(v: u32) -> Result<Self, Self::Error> {
+        match v {
+            x if x == Opcode::Handshake as u32 => Ok(Opcode::Handshake),
+            x if x == Opcode::Frame as u32 => Ok(Opcode::Frame),
+            x if x == Opcode::Close as u32 => Ok(Opcode::Close),
+            x if x == Opcode::Ping as u32 => Ok(Opcode::Ping),
+            x if x == Opcode::Pong as u32 => Ok(Opcode::Pong),
+            _ => Err(()),
+        }
+    }
+}
+
 pub struct Frame {
     pub opcode: u32,
     pub body: Bytes,
 }
 
-//  Defaults to 16 Mib (just an assumption), this can be changed later
+/// Defaults to 16 Mib (just an assumption), this can be changed later
 const MAX_FRAME_SIZE: usize = 16 * 1024 * 1024;
 
 macro_rules! acquire {
@@ -191,7 +221,7 @@ impl DiscordSock {
 
     pub async fn send_frame<T: AsRef<[u8]>>(
         &self,
-        opcode: u32,
+        opcode: Opcode,
         body: T,
     ) -> Result<(), DiscordSockError> {
         let body = body.as_ref();
@@ -202,6 +232,7 @@ impl DiscordSock {
             });
         }
         let mut buf = BytesMut::with_capacity(8 + body.len());
+        let opcode: u32 = opcode.into();
 
         buf.extend_from_slice(&opcode.to_le_bytes());
         buf.extend_from_slice(&(body.len() as u32).to_le_bytes());
@@ -250,13 +281,13 @@ impl DiscordSock {
         let handshake = PresenceHandshake { v: 1, client_id };
         let json = serde_json::to_string(&handshake).map_err(InnerParsingError::from)?;
 
-        self.send_frame(0, json).await?;
+        self.send_frame(Opcode::Handshake, json).await?;
         Ok(())
     }
 
     async fn send_cmd(&mut self, cmd: ActivityCommand) -> Result<(), DiscordSockError> {
         let cmd = cmd.to_json()?;
-        self.send_frame(1, cmd).await?;
+        self.send_frame(Opcode::Frame, cmd).await?;
         Ok(())
     }
 }
