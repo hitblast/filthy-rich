@@ -9,10 +9,11 @@ Finally, a stabilized API for `filthy-rich`! (work-in-progress still)
 New features:
 
 - Added a new `ActivitySpec` type which basically replaces the current architecture of a mutable `Activity` to a post-built, immutable object which can be sent around.
+- Added `Activity::empty_spec` which gives an empty but usable `ActivitySpec` (basically executes `ActivitySpec::default` internally).
 
 Changes:
 
-- `ActivityResponseData` now only gives out borrowed read-only data through functions (e.g. `ActivityResponseData::name() -> Option<&str>`).
+- `ActivityResponseData` now only gives out borrowed read-only data through functions (e.g. `ActivityResponseData::name` now returns `Option<&str>`).
 - The change above also has been done to `ReadyData`.
 - Removed unused `derive` macros from `Activity` since its now just a placeholder struct for accessing `ActivityBuilder` with no values attached to it.
 
