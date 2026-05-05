@@ -21,6 +21,7 @@ Changes:
 Internal changes:
 
 - Removed the use of `Arc` from the inner `readhalf` and `writehalf` fields of `DiscordSock` since the main loop doesn't cross thread boundaries.
+- Added a new `DisconnectReason::OldRelicComputer` error.
 
 ### v0.14.1
 
