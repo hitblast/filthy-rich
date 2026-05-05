@@ -236,9 +236,18 @@ impl PresenceRunner {
                                             let session_start_unpacked = if let Some(s) = session_start {
                                                 s
                                             } else {
-                                                let t = get_current_timestamp().unwrap_or_default();
-                                                session_start = Some(t);
-                                                t
+                                                match get_current_timestamp() {
+                                                    Ok(t) => {
+                                                        session_start = Some(t);
+                                                        t
+                                                    },
+                                                    Err(e) => {
+                                                        if show_errors {
+                                                            eprintln!("Discord RPC pre-send_activity time parsing error: {e}")
+                                                        }
+                                                        break Some(DisconnectReason::OldRelicComputer(e.to_string()));
+                                                    }
+                                                }
                                             };
 
                                             let activity = *activity;

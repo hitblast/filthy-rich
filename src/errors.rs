@@ -13,6 +13,7 @@ use tokio::{sync::oneshot::error::RecvError, task::JoinError};
 pub enum DisconnectReason {
     PeerClosed,
     ServerClosed,
+    OldRelicComputer(String),
     ReadFrameError(String),
     SendFrameError(String),
     SendActivityError(String),
