@@ -4,6 +4,15 @@ Active since v0.8.5.
 
 ### v0.14.2
 
+New features:
+
+- Added a new `SendableActivity` type which basically replaces the current architecture of a mutable `Activity` to a post-built, immutable object which can be sent around.
+
+Changes:
+
+- `ActivityResponseData` now only gives out borrowed read-only data through functions (e.g. `ActivityResponseData::name() -> Option<&str>`).
+- The `SendableActivity` type (new) is essentially `ActivityPayload` but re-exported, and on steroids.
+
 Internal changes:
 
 - Removed the use of `Arc` from the inner `readhalf` and `writehalf` fields of `DiscordSock` since the main loop doesn't cross thread boundaries.

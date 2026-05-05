@@ -6,7 +6,8 @@ use crate::{
     errors::{DisconnectReason, DiscordSockError, PresenceRunnerError},
     socket::DiscordSock,
     types::{
-        Activity, ActivityResponseData, DynamicRPCFrame, IPCCommand, ReadyData, ReadyRPCFrame,
+        ActivityResponseData, DynamicRPCFrame, IPCCommand, ReadyData, ReadyRPCFrame,
+        SendableActivity,
     },
     utils::get_current_timestamp,
 };
@@ -135,7 +136,7 @@ impl PresenceRunner {
 
         let join_handle = tokio::spawn(async move {
             let mut backoff = 1;
-            let mut last_activity: Option<Activity> = None;
+            let mut last_activity: Option<SendableActivity> = None;
             let mut ready_tx = Some(ready_tx);
             let mut connected = false;
             let mut retries = 0;

@@ -11,9 +11,9 @@ async fn main() -> Result<(), PresenceError> {
         .on_activity_send(|data| {
             println!(
                 "Activity sent to app: {} (running on {})\nMetadata: {}",
-                data.name.unwrap_or_default(),
-                data.platform.unwrap_or_default(),
-                data.metadata.unwrap_or_default()
+                data.name().unwrap_or_default(),
+                data.platform().unwrap_or_default(),
+                data.metadata().unwrap_or_default()
             )
         })
         .on_disconnect(|f| println!("Disconnected: {f:?}"))
