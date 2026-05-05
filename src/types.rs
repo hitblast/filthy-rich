@@ -355,21 +355,11 @@ impl Activity {
     /// Discord. Useful when you only need a simple rich presence instance.
     ///
     /// For building a complete activity, using [`Activity::new`] is suggested instead.
+    ///
+    /// NOTE: This is the same as calling [`ActivitySpec::default`].
     #[must_use]
-    pub fn empty() -> ActivitySpec {
-        ActivitySpec {
-            name: None,
-            r#type: None,
-            status_display_type: None,
-            details: None,
-            details_url: None,
-            state: None,
-            state_url: None,
-            instance: None,
-            assets: None,
-            buttons: None,
-            duration: None,
-        }
+    pub fn empty_spec() -> ActivitySpec {
+        ActivitySpec::default()
     }
 }
 
