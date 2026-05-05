@@ -1,6 +1,5 @@
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
 
 use bytes::{Bytes, BytesMut};
 #[cfg(target_family = "unix")]
@@ -113,8 +112,8 @@ fn get_pipe_path() -> Option<PathBuf> {
 
 #[derive(Debug)]
 pub struct DiscordSock {
-    readhalf: Arc<Mutex<ReadHalfCore>>,
-    writehalf: Arc<Mutex<WriteHalfCore>>,
+    readhalf: Mutex<ReadHalfCore>,
+    writehalf: Mutex<WriteHalfCore>,
 }
 
 impl DiscordSock {
@@ -151,8 +150,8 @@ impl DiscordSock {
 
         match result {
             Ok((readhalf, writehalf)) => Ok(Self {
-                readhalf: Arc::new(Mutex::new(readhalf)),
-                writehalf: Arc::new(Mutex::new(writehalf)),
+                readhalf: Mutex::new(readhalf),
+                writehalf: Mutex::new(writehalf),
             }),
             Err(e) => Err(e),
         }
@@ -217,7 +216,6 @@ impl DiscordSock {
     }
 
     pub async fn close(self) -> Result<(), DiscordSockError> {
-        // write half: can shutdown
         #[cfg(target_family = "unix")]
         {
             let mut write = self.writehalf.lock().await;
@@ -225,7 +223,9 @@ impl DiscordSock {
             write.shutdown().await?;
         }
 
-        // on Windows, dropping the halves closes the NamedPipe
+        // for future me: in case you've forgotten how it works, essentially on Windows, since
+        // we return Ok(()) here, the struct instance is dropped, hence dropping the NamedPipes
+        // in the process - closing the socket.
 
         Ok(())
     }
