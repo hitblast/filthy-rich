@@ -18,8 +18,13 @@ Changes:
 - The change above also has been done to `ReadyData`.
 - Removed unused `derive` macros from `Activity` since its now just a placeholder struct for accessing `ActivityBuilder` with no values attached to it.
 
+Bug fixes:
+
+- Fixed a fatal bug in ping-pong logic which led to the sending of frames with `PING` and not `PONG` in response to `PING`.
+
 Internal changes:
 
+- Added an idiomatic `Opcode` enum and bettered code quality for matching opcodes in the `socket.read_frame()` loop inside of `PresenceRunner`.
 - Removed the use of `Arc` from the inner `readhalf` and `writehalf` fields of `DiscordSock` since the main loop doesn't cross thread boundaries.
 - Added a new `DisconnectReason::OldRelicComputer` error.
 
