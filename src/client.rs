@@ -2,7 +2,7 @@ use tokio::sync::{mpsc::Sender, oneshot};
 
 use crate::{
     errors::PresenceClientError,
-    types::{IPCCommand, SendableActivity},
+    types::{ActivitySpec, IPCCommand},
 };
 
 /// A client handle for communicating with [`super::PresenceRunner`] and its inner loop.
@@ -21,10 +21,7 @@ impl PresenceClient {
 
     /// Sets/updates the Discord Rich presence activity.
     /// The runner must be started before calling this.
-    pub async fn set_activity(
-        &self,
-        activity: SendableActivity,
-    ) -> Result<(), PresenceClientError> {
+    pub async fn set_activity(&self, activity: ActivitySpec) -> Result<(), PresenceClientError> {
         let activity = Box::new(activity);
 
         self.tx

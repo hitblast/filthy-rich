@@ -22,7 +22,7 @@ use tokio::{
 use std::env::var;
 
 use crate::errors::{DiscordSockError, InnerParsingError};
-use crate::types::{ActivityCommand, ActivityPayload, PresenceHandshake, SendableActivity};
+use crate::types::{ActivityCommand, ActivityPayload, ActivitySpec, PresenceHandshake};
 
 #[cfg(target_family = "windows")]
 type ReadHalfCore = ReadHalf<NamedPipeClient>;
@@ -230,7 +230,7 @@ impl DiscordSock {
 impl DiscordSock {
     pub(crate) async fn send_activity(
         &mut self,
-        activity: SendableActivity,
+        activity: ActivitySpec,
         session_start: u64,
     ) -> Result<(), DiscordSockError> {
         let activity = ActivityPayload::create(activity, session_start)?;

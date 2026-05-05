@@ -8,7 +8,7 @@ Finally, a stabilized API for `filthy-rich`! (work-in-progress still)
 
 New features:
 
-- Added a new `SendableActivity` type which basically replaces the current architecture of a mutable `Activity` to a post-built, immutable object which can be sent around.
+- Added a new `ActivitySpec` type which basically replaces the current architecture of a mutable `Activity` to a post-built, immutable object which can be sent around.
 
 Changes:
 

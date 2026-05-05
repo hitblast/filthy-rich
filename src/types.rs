@@ -48,7 +48,7 @@ pub(crate) struct PresenceHandshake<'a> {
 
 /// A complete Rich Presence activity which can be sent to [`super::PresenceClient::set_activity`].
 #[derive(Default, Clone)]
-pub struct SendableActivity {
+pub struct ActivitySpec {
     name: Option<String>,
     r#type: Option<u8>,
     instance: Option<bool>,
@@ -89,7 +89,7 @@ pub(crate) struct ActivityPayload {
 }
 
 impl ActivityPayload {
-    pub fn create(value: SendableActivity, session_start: u64) -> Result<Self, InnerParsingError> {
+    pub fn create(value: ActivitySpec, session_start: u64) -> Result<Self, InnerParsingError> {
         let current_t = get_current_timestamp()?;
         let end_timestamp = value.duration.map(|d| current_t + d.as_secs());
 
@@ -188,7 +188,7 @@ pub(crate) struct DynamicRPCFrame {
 
 pub(crate) enum IPCCommand {
     SetActivity {
-        activity: Box<SendableActivity>,
+        activity: Box<ActivitySpec>,
     },
     ClearActivity,
     Close {
@@ -338,7 +338,7 @@ impl From<StatusDisplayType> for u8 {
     }
 }
 
-/// Represents a Discord Rich Presence activity which is yet to be built. To start building it into a usable [`SendableActivity`],
+/// Represents a Discord Rich Presence activity which is yet to be built. To start building it into a usable [`ActivitySpec`],
 /// initialize a new [`ActivityBuilder`] with [`Activity::new`].
 #[derive(Debug, Clone)]
 pub struct Activity;
@@ -351,14 +351,14 @@ impl Activity {
         ActivityBuilder::default()
     }
 
-    /// Gives out an empty but usable [`SendableActivity`]. Essentially,
+    /// Gives out an empty but usable [`ActivitySpec`]. Essentially,
     /// this only shows the name of the app and the elapsed time for the activity on
     /// Discord. Useful when you only need a simple rich presence instance.
     ///
     /// For building a complete activity, using [`Activity::new`] is suggested instead.
     #[must_use]
-    pub fn empty() -> SendableActivity {
-        SendableActivity {
+    pub fn empty() -> ActivitySpec {
+        ActivitySpec {
             name: None,
             r#type: None,
             status_display_type: None,
@@ -375,7 +375,7 @@ impl Activity {
 }
 
 /// A builder for a Rich Presence activity.
-/// To build a [`SendableActivity`] out of it, use [`ActivityBuilder::build`].
+/// To build a [`ActivitySpec`] out of it, use [`ActivityBuilder::build`].
 #[derive(Default)]
 pub struct ActivityBuilder {
     name: Option<String>,
@@ -507,10 +507,10 @@ impl ActivityBuilder {
         self
     }
 
-    /// Parses the state of this builder into a usable [`SendableActivity`] for you to pass through [`super::PresenceClient::set_activity`].
+    /// Parses the state of this builder into a usable [`ActivitySpec`] for you to pass through [`super::PresenceClient::set_activity`].
     #[must_use]
-    pub fn build(self) -> SendableActivity {
-        SendableActivity {
+    pub fn build(self) -> ActivitySpec {
+        ActivitySpec {
             name: self.name,
             r#type: self.activity_type.map(|f| f.into()),
             status_display_type: self.status_display_type.map(|f| f.into()),
