@@ -29,11 +29,11 @@ impl PresenceRunner {
     #[must_use]
     /// Create a new [`PresenceRunner`] instance. Requires the client ID of your chosen app from the
     /// [Discord Developer Portal](https://discord.com/developers/applications).
-    pub fn new(client_id: &str) -> Self {
+    pub fn new(client_id: impl Into<String>) -> Self {
         let (tx, rx) = mpsc::channel(32);
         let client = PresenceClient {
             tx,
-            client_id: client_id.to_string(),
+            client_id: client_id.into(),
         };
 
         Self {
