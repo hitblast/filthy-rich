@@ -18,7 +18,7 @@ pub(crate) struct ActivityCommand {
 }
 
 impl ActivityCommand {
-    pub fn new_with(activity: Option<SendableActivity>) -> Self {
+    pub fn new_with(activity: Option<ActivityPayload>) -> Self {
         Self {
             cmd: "SET_ACTIVITY",
             args: ActivityCommandArgs {
@@ -37,7 +37,7 @@ impl ActivityCommand {
 #[derive(Serialize)]
 struct ActivityCommandArgs {
     pid: u32,
-    activity: Option<SendableActivity>,
+    activity: Option<ActivityPayload>,
 }
 
 #[derive(Serialize)]
@@ -47,48 +47,69 @@ pub(crate) struct PresenceHandshake<'a> {
 }
 
 /// A complete Rich Presence activity which can be sent to [`super::PresenceClient::set_activity`].
-#[derive(Serialize, Default, Clone)]
+#[derive(Default, Clone)]
 pub struct SendableActivity {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub(crate) name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub(crate) r#type: Option<u8>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub(crate) created_at: Option<u64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub(crate) instance: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub(crate) status_display_type: Option<u8>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub(crate) details: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub(crate) details_url: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub(crate) state: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub(crate) state_url: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub(crate) timestamps: Option<TimestampPayload>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub(crate) assets: Option<AssetsPayload>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub(crate) buttons: Option<Vec<ButtonPayload>>,
-    #[serde(skip)]
-    pub(crate) duration: Option<Duration>,
+    name: Option<String>,
+    r#type: Option<u8>,
+    instance: Option<bool>,
+    status_display_type: Option<u8>,
+    details: Option<String>,
+    details_url: Option<String>,
+    state: Option<String>,
+    state_url: Option<String>,
+    assets: Option<AssetsPayload>,
+    buttons: Option<Vec<ButtonPayload>>,
+    duration: Option<Duration>,
 }
 
-impl SendableActivity {
-    pub(crate) fn populate_time(mut self, session_start: u64) -> Result<Self, InnerParsingError> {
+#[derive(Serialize)]
+pub(crate) struct ActivityPayload {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub r#type: Option<u8>,
+    pub created_at: u64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub instance: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub status_display_type: Option<u8>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub details: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub details_url: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub state: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub state_url: Option<String>,
+    pub timestamps: TimestampPayload,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub assets: Option<AssetsPayload>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub buttons: Option<Vec<ButtonPayload>>,
+}
+
+impl ActivityPayload {
+    pub fn create(value: SendableActivity, session_start: u64) -> Result<Self, InnerParsingError> {
         let current_t = get_current_timestamp()?;
-        let end_timestamp = self.duration.map(|d| current_t + d.as_secs());
+        let end_timestamp = value.duration.map(|d| current_t + d.as_secs());
 
-        self.created_at = Some(current_t);
-        self.timestamps = Some(TimestampPayload {
-            start: session_start,
-            end: end_timestamp,
-        });
-
-        Ok(self)
+        Ok(Self {
+            name: value.name,
+            r#type: value.r#type,
+            created_at: current_t,
+            instance: value.instance,
+            status_display_type: value.status_display_type,
+            details: value.details,
+            details_url: value.details_url,
+            state: value.state,
+            state_url: value.state_url,
+            timestamps: TimestampPayload {
+                start: session_start,
+                end: end_timestamp,
+            },
+            assets: value.assets,
+            buttons: value.buttons,
+        })
     }
 }
 
@@ -341,13 +362,11 @@ impl Activity {
             name: None,
             r#type: None,
             status_display_type: None,
-            created_at: None,
             details: None,
             details_url: None,
             state: None,
             state_url: None,
             instance: None,
-            timestamps: None,
             assets: None,
             buttons: None,
             duration: None,
@@ -495,13 +514,11 @@ impl ActivityBuilder {
             name: self.name,
             r#type: self.activity_type.map(|f| f.into()),
             status_display_type: self.status_display_type.map(|f| f.into()),
-            created_at: None,
             details: self.details,
             details_url: self.details_url,
             state: self.state,
             state_url: self.state_url,
             instance: self.instance,
-            timestamps: None,
             assets: Some(AssetsPayload {
                 large_image: self.large_image,
                 large_url: self.large_url,
