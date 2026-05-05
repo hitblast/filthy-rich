@@ -14,7 +14,6 @@ Changes:
 
 - `ActivityResponseData` now only gives out borrowed read-only data through functions (e.g. `ActivityResponseData::name() -> Option<&str>`).
 - The change above also has been done to `ReadyData`.
-- The `SendableActivity` type (new) is essentially `ActivityPayload` but re-exported, and on steroids.
 
 Internal changes:
 
