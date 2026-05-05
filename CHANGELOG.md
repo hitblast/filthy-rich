@@ -13,6 +13,7 @@ New features:
 
 Changes:
 
+- `PresenceRunner::new` now accepts any type of value for `client_id` as long as it implements `Into<String>`.
 - `ActivityResponseData` now only gives out borrowed read-only data through functions (e.g. `ActivityResponseData::name` now returns `Option<&str>`).
 - The change above also has been done to `ReadyData`.
 - Removed unused `derive` macros from `Activity` since its now just a placeholder struct for accessing `ActivityBuilder` with no values attached to it.
