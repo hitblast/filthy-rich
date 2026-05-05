@@ -191,18 +191,22 @@ pub struct ActivityResponseData {
 }
 
 impl ActivityResponseData {
+    #[must_use]
     pub fn application_id(&self) -> Option<&str> {
         self.application_id.as_deref()
     }
 
+    #[must_use]
     pub fn platform(&self) -> Option<&str> {
         self.platform.as_deref()
     }
 
+    #[must_use]
     pub fn name(&self) -> Option<&str> {
         self.name.as_deref()
     }
 
+    #[must_use]
     pub fn metadata(&self) -> Option<&Value> {
         self.metadata.as_ref()
     }
@@ -215,6 +219,7 @@ pub struct ReadyData {
 }
 
 impl ReadyData {
+    #[must_use]
     pub fn user(&self) -> &DiscordUser {
         &self.user
     }
@@ -235,38 +240,47 @@ pub struct DiscordUser {
 }
 
 impl DiscordUser {
+    #[must_use]
     pub fn id(&self) -> &str {
         &self.id
     }
 
+    #[must_use]
     pub fn username(&self) -> &str {
         &self.username
     }
 
+    #[must_use]
     pub fn global_name(&self) -> Option<&str> {
         self.global_name.as_deref()
     }
 
+    #[must_use]
     pub fn discriminator(&self) -> Option<&str> {
         self.discriminator.as_deref()
     }
 
+    #[must_use]
     pub fn avatar(&self) -> Option<&str> {
         self.avatar.as_deref()
     }
 
+    #[must_use]
     pub fn avatar_decoration_data(&self) -> Option<&Value> {
         self.avatar_decoration_data.as_ref()
     }
 
+    #[must_use]
     pub fn bot(&self) -> bool {
         self.bot
     }
 
+    #[must_use]
     pub fn flags(&self) -> Option<u64> {
         self.flags
     }
 
+    #[must_use]
     pub fn premium_type(&self) -> Option<u64> {
         self.premium_type
     }
@@ -321,6 +335,7 @@ impl Activity {
     /// Discord. Useful when you only need a simple rich presence instance.
     ///
     /// For building a complete activity, using [`Activity::new`] is suggested instead.
+    #[must_use]
     pub fn empty() -> SendableActivity {
         SendableActivity {
             name: None,
