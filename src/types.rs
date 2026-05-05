@@ -211,21 +211,65 @@ impl ActivityResponseData {
 /// Data received from READY event.
 #[derive(Debug, Clone, Deserialize)]
 pub struct ReadyData {
-    pub user: DiscordUser,
+    user: DiscordUser,
+}
+
+impl ReadyData {
+    pub fn user(&self) -> &DiscordUser {
+        &self.user
+    }
 }
 
 /// Represents a Discord user.
 #[derive(Debug, Clone, Deserialize)]
 pub struct DiscordUser {
-    pub id: String,
-    pub username: String,
-    pub global_name: Option<String>,
-    pub discriminator: Option<String>,
-    pub avatar: Option<String>,
-    pub avatar_decoration_data: Option<Value>,
-    pub bot: bool,
-    pub flags: Option<u64>,
-    pub premium_type: Option<u64>,
+    id: String,
+    username: String,
+    global_name: Option<String>,
+    discriminator: Option<String>,
+    avatar: Option<String>,
+    avatar_decoration_data: Option<Value>,
+    bot: bool,
+    flags: Option<u64>,
+    premium_type: Option<u64>,
+}
+
+impl DiscordUser {
+    pub fn id(&self) -> &str {
+        &self.id
+    }
+
+    pub fn username(&self) -> &str {
+        &self.username
+    }
+
+    pub fn global_name(&self) -> Option<&str> {
+        self.global_name.as_deref()
+    }
+
+    pub fn discriminator(&self) -> Option<&str> {
+        self.discriminator.as_deref()
+    }
+
+    pub fn avatar(&self) -> Option<&str> {
+        self.avatar.as_deref()
+    }
+
+    pub fn avatar_decoration_data(&self) -> Option<&Value> {
+        self.avatar_decoration_data.as_ref()
+    }
+
+    pub fn bot(&self) -> bool {
+        self.bot
+    }
+
+    pub fn flags(&self) -> Option<u64> {
+        self.flags
+    }
+
+    pub fn premium_type(&self) -> Option<u64> {
+        self.premium_type
+    }
 }
 
 /// Enum indicating the activity type.

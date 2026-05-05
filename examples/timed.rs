@@ -15,7 +15,7 @@ async fn main() -> Result<(), PresenceError> {
     let count = Arc::new(AtomicU8::new(0));
 
     let mut runner = PresenceRunner::new("1463450870480900160")
-        .on_ready(|data| println!("Connected to user: {}", data.user.username))
+        .on_ready(|data| println!("Connected to user: {}", data.user().username()))
         .on_activity_send(move |_| {
 
             // increments the counter with every send_activity()

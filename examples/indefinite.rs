@@ -7,7 +7,7 @@ use filthy_rich::{
 #[tokio::main]
 async fn main() -> Result<(), PresenceError> {
     let mut runner = PresenceRunner::new("1463450870480900160")
-        .on_ready(|data| println!("Connected to user: {}", data.user.username))
+        .on_ready(|data| println!("Connected to user: {}", data.user().username()))
         .on_activity_send(|data| {
             println!(
                 "Activity sent to app: {} (running on {})\nMetadata: {}",
