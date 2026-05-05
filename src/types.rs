@@ -5,7 +5,10 @@ use serde_json::Value;
 use std::{collections::HashMap, time::Duration};
 use uuid::Uuid;
 
-use crate::{errors::InnerParsingError, utils::filter_none_string};
+use crate::{
+    errors::InnerParsingError,
+    utils::{filter_none_string, get_current_timestamp},
+};
 
 #[derive(Serialize)]
 pub(crate) struct ActivityCommand {
@@ -15,7 +18,7 @@ pub(crate) struct ActivityCommand {
 }
 
 impl ActivityCommand {
-    pub fn new_with(activity: Option<ActivityPayload>) -> Self {
+    pub fn new_with(activity: Option<SendableActivity>) -> Self {
         Self {
             cmd: "SET_ACTIVITY",
             args: ActivityCommandArgs {
@@ -34,7 +37,7 @@ impl ActivityCommand {
 #[derive(Serialize)]
 struct ActivityCommandArgs {
     pid: u32,
-    activity: Option<ActivityPayload>,
+    activity: Option<SendableActivity>,
 }
 
 #[derive(Serialize)]
@@ -43,34 +46,53 @@ pub(crate) struct PresenceHandshake<'a> {
     pub client_id: &'a str,
 }
 
-/// Payload that actually gets serialized for setting a rich presence activity.
-///
-/// Reference: https://docs.discord.com/developers/events/gateway-events#activity-object
-#[derive(Serialize)]
-pub(crate) struct ActivityPayload {
+/// A complete Rich Presence activity which can be sent to [`PresenceClient::set_activity`].
+#[derive(Serialize, Default, Clone)]
+pub struct SendableActivity {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
+    pub(crate) name: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub r#type: Option<u8>,
-    pub created_at: u64,
+    pub(crate) r#type: Option<u8>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub instance: Option<bool>,
+    pub(crate) created_at: Option<u64>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub status_display_type: Option<u8>,
+    pub(crate) instance: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub details: Option<String>,
+    pub(crate) status_display_type: Option<u8>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub details_url: Option<String>,
+    pub(crate) details: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub state: Option<String>,
+    pub(crate) details_url: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub state_url: Option<String>,
-    pub timestamps: TimestampPayload,
-    pub assets: AssetsPayload,
+    pub(crate) state: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub buttons: Option<Vec<ButtonPayload>>,
+    pub(crate) state_url: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) timestamps: Option<TimestampPayload>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) assets: Option<AssetsPayload>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) buttons: Option<Vec<ButtonPayload>>,
+    #[serde(skip)]
+    pub(crate) duration: Option<Duration>,
 }
 
+impl SendableActivity {
+    pub(crate) fn populate_time(mut self, session_start: u64) -> Result<Self, InnerParsingError> {
+        let current_t = get_current_timestamp()?;
+        let end_timestamp = self.duration.map(|d| current_t + d.as_secs());
+
+        self.created_at = Some(current_t);
+        self.timestamps = Some(TimestampPayload {
+            start: session_start,
+            end: end_timestamp,
+        });
+
+        Ok(self)
+    }
+}
+
+#[derive(Clone)]
 pub(crate) struct AssetsPayload {
     pub large_image: Option<String>,
     pub large_url: Option<String>,
@@ -80,8 +102,6 @@ pub(crate) struct AssetsPayload {
     pub small_url: Option<String>,
 }
 
-// This is redundant as [`ActivityBuilder`] already accepts large_image/small_image fields mandatorily before receiving any of their
-// corresponding url/text fields to ensure safety.
 impl Serialize for AssetsPayload {
     fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
     where
@@ -115,13 +135,13 @@ impl Serialize for AssetsPayload {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 pub(crate) struct ButtonPayload {
     pub label: String,
     pub url: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 pub(crate) struct TimestampPayload {
     pub start: u64,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -147,7 +167,7 @@ pub(crate) struct DynamicRPCFrame {
 
 pub(crate) enum IPCCommand {
     SetActivity {
-        activity: Box<Activity>,
+        activity: Box<SendableActivity>,
     },
     ClearActivity,
     Close {
@@ -164,10 +184,28 @@ pub(crate) enum IPCCommand {
 /// the actual output of this struct may vary depending on what client you are using.
 #[derive(Debug, Clone, Deserialize)]
 pub struct ActivityResponseData {
-    pub application_id: Option<String>,
-    pub platform: Option<String>,
-    pub name: Option<String>,
-    pub metadata: Option<Value>,
+    application_id: Option<String>,
+    platform: Option<String>,
+    name: Option<String>,
+    metadata: Option<Value>,
+}
+
+impl ActivityResponseData {
+    pub fn application_id(&self) -> Option<&str> {
+        self.application_id.as_deref()
+    }
+
+    pub fn platform(&self) -> Option<&str> {
+        self.platform.as_deref()
+    }
+
+    pub fn name(&self) -> Option<&str> {
+        self.name.as_deref()
+    }
+
+    pub fn metadata(&self) -> Option<&Value> {
+        self.metadata.as_ref()
+    }
 }
 
 /// Data received from READY event.
@@ -221,26 +259,10 @@ impl From<StatusDisplayType> for u8 {
     }
 }
 
-/// Represents a Discord Rich Presence activity.
+/// Represents a Discord Rich Presence activity which is yet to be built. To start building it into a usable [`SendableActivity`],
+/// initialize a new [`ActivityBuilder`] with [`Activity::new`].
 #[derive(Debug, Clone)]
-pub struct Activity {
-    pub(crate) name: Option<String>,
-    pub(crate) activity_type: Option<ActivityType>,
-    pub(crate) status_display_type: Option<StatusDisplayType>,
-    pub(crate) details: Option<String>,
-    pub(crate) details_url: Option<String>,
-    pub(crate) state: Option<String>,
-    pub(crate) state_url: Option<String>,
-    pub(crate) instance: Option<bool>,
-    pub(crate) duration: Option<Duration>,
-    pub(crate) large_image: Option<String>,
-    pub(crate) large_text: Option<String>,
-    pub(crate) large_url: Option<String>,
-    pub(crate) small_image: Option<String>,
-    pub(crate) small_text: Option<String>,
-    pub(crate) small_url: Option<String>,
-    pub(crate) buttons: Option<HashMap<String, String>>,
-}
+pub struct Activity;
 
 impl Activity {
     /// Initializes a new activity builder instance.
@@ -249,38 +271,33 @@ impl Activity {
     pub fn new() -> ActivityBuilder {
         ActivityBuilder::default()
     }
-}
 
-impl Default for Activity {
-    /// Gives out an empty [`Activity`] with all of the default values. Essentially,
+    /// Gives out an empty but usable [`SendableActivity`]. Essentially,
     /// this only shows the name of the app and the elapsed time for the activity on
     /// Discord. Useful when you only need a simple rich presence instance.
     ///
     /// For building a complete activity, using [`Activity::new`] is suggested instead.
-    fn default() -> Self {
-        Self {
+    pub fn empty() -> SendableActivity {
+        SendableActivity {
             name: None,
-            activity_type: None,
+            r#type: None,
             status_display_type: None,
+            created_at: None,
             details: None,
             details_url: None,
             state: None,
             state_url: None,
             instance: None,
-            duration: None,
-            large_image: None,
-            large_text: None,
-            large_url: None,
-            small_image: None,
-            small_text: None,
-            small_url: None,
+            timestamps: None,
+            assets: None,
             buttons: None,
+            duration: None,
         }
     }
 }
 
 /// A builder for a Rich Presence activity.
-/// To build an [`Activity`] out of it, use [`ActivityBuilder::build`].
+/// To build a [`SendableActivity`] out of it, use [`ActivityBuilder::build`].
 #[derive(Default)]
 pub struct ActivityBuilder {
     name: Option<String>,
@@ -412,26 +429,37 @@ impl ActivityBuilder {
         self
     }
 
-    /// Parses the state of this builder into a usable [`Activity`] for you to pass through [`super::PresenceClient::set_activity`].
+    /// Parses the state of this builder into a usable [`SendableActivity`] for you to pass through [`super::PresenceClient::set_activity`].
     #[must_use]
-    pub fn build(self) -> Activity {
-        Activity {
+    pub fn build(self) -> SendableActivity {
+        SendableActivity {
             name: self.name,
-            activity_type: self.activity_type,
-            status_display_type: self.status_display_type,
+            r#type: self.activity_type.map(|f| f.into()),
+            status_display_type: self.status_display_type.map(|f| f.into()),
+            created_at: None,
             details: self.details,
             details_url: self.details_url,
             state: self.state,
             state_url: self.state_url,
             instance: self.instance,
+            timestamps: None,
+            assets: Some(AssetsPayload {
+                large_image: self.large_image,
+                large_url: self.large_url,
+                large_text: self.large_text,
+                small_image: self.small_image,
+                small_text: self.small_text,
+                small_url: self.small_url,
+            }),
+            buttons: self.buttons.map(|btns| {
+                btns.into_iter()
+                    .map(|f| ButtonPayload {
+                        label: f.0,
+                        url: f.1,
+                    })
+                    .collect()
+            }),
             duration: self.duration,
-            large_image: self.large_image,
-            large_text: self.large_text,
-            large_url: self.large_url,
-            small_image: self.small_image,
-            small_text: self.small_text,
-            small_url: self.small_url,
-            buttons: self.buttons,
         }
     }
 }

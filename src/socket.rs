@@ -22,11 +22,7 @@ use tokio::{
 use std::env::var;
 
 use crate::errors::{DiscordSockError, InnerParsingError};
-use crate::types::{
-    Activity, ActivityCommand, ActivityPayload, AssetsPayload, ButtonPayload, PresenceHandshake,
-    TimestampPayload,
-};
-use crate::utils::get_current_timestamp;
+use crate::types::{ActivityCommand, PresenceHandshake, SendableActivity};
 
 #[cfg(target_family = "windows")]
 type ReadHalfCore = ReadHalf<NamedPipeClient>;
@@ -234,43 +230,11 @@ impl DiscordSock {
 impl DiscordSock {
     pub(crate) async fn send_activity(
         &mut self,
-        activity: Activity,
+        activity: SendableActivity,
         session_start: u64,
     ) -> Result<(), DiscordSockError> {
-        let current_t = get_current_timestamp()?;
-        let end_timestamp = activity.duration.map(|d| current_t + d.as_secs());
-
-        let cmd = ActivityCommand::new_with(Some(ActivityPayload {
-            name: activity.name,
-            r#type: activity.activity_type.map(|f| f.into()),
-            created_at: current_t,
-            status_display_type: activity.status_display_type.map(|f| f.into()),
-            details: activity.details,
-            details_url: activity.details_url,
-            state: activity.state,
-            state_url: activity.state_url,
-            instance: activity.instance,
-            timestamps: TimestampPayload {
-                start: session_start,
-                end: end_timestamp,
-            },
-            assets: AssetsPayload {
-                large_image: activity.large_image,
-                large_text: activity.large_text,
-                large_url: activity.large_url,
-                small_image: activity.small_image,
-                small_text: activity.small_text,
-                small_url: activity.small_url,
-            },
-            buttons: activity.buttons.map(|btns| {
-                btns.into_iter()
-                    .map(|f| ButtonPayload {
-                        label: f.0,
-                        url: f.1,
-                    })
-                    .collect()
-            }),
-        }));
+        let activity = activity.populate_time(session_start)?;
+        let cmd = ActivityCommand::new_with(Some(activity));
 
         self.send_cmd(cmd).await?;
         Ok(())
