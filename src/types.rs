@@ -340,7 +340,6 @@ impl From<StatusDisplayType> for u8 {
 
 /// Represents a Discord Rich Presence activity which is yet to be built. To start building it into a usable [`ActivitySpec`],
 /// initialize a new [`ActivityBuilder`] with [`Activity::new`].
-#[derive(Debug, Clone)]
 pub struct Activity;
 
 impl Activity {
