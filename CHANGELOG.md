@@ -2,6 +2,12 @@
 
 Active since v0.8.5.
 
+### v0.14.2
+
+Internal changes:
+
+- Removed the use of `Arc` from the inner `readhalf` and `writehalf` fields of `DiscordSock` since the main loop doesn't cross thread boundaries.
+
 ### v0.14.1
 
 Internal changes:
