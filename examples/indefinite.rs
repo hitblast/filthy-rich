@@ -36,7 +36,7 @@ async fn main() -> Result<(), PresenceError> {
         .large_url("https://hitblast.github.io/")
         .small_image("status")
         .small_text("Online")
-        .build();
+        .build()?;
 
     client.set_activity(activity).await?;
 

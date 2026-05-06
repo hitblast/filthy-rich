@@ -1,6 +1,7 @@
 use std::{collections::HashMap, time::Duration};
 
 use crate::{
+    errors::ActivitySpecBuildError,
     types::{ActivitySpec, ActivityType, AssetsPayload, ButtonPayload, StatusDisplayType},
     utils::filter_none_string,
 };
@@ -165,8 +166,40 @@ impl ActivityBuilder {
 
     /// Parses the state of this builder into a usable [`ActivitySpec`] for you to pass through [`crate::PresenceClient::set_activity`].
     #[must_use]
-    pub fn build(self) -> ActivitySpec {
-        ActivitySpec {
+    pub fn build(self) -> Result<ActivitySpec, ActivitySpecBuildError> {
+        if (self.large_image.is_none() && (self.large_text.is_some() || self.large_url.is_some()))
+            || (self.small_image.is_none()
+                && (self.small_text.is_some() || self.small_url.is_some()))
+        {
+            return Err(ActivitySpecBuildError::ImageAssetsTooEarly);
+        }
+
+        if self.details.is_none() && self.details_url.is_some() {
+            return Err(ActivitySpecBuildError::ElementURLProvidedEarly("details"));
+        } else if self.state.is_none() && self.state_url.is_some() {
+            return Err(ActivitySpecBuildError::ElementURLProvidedEarly("state"));
+        }
+
+        match self.status_display_type {
+            Some(s) => match s {
+                StatusDisplayType::Details => {
+                    if self.details.is_none() {
+                        return Err(ActivitySpecBuildError::StatusDisplayElementMissing(
+                            "details",
+                        ));
+                    }
+                }
+                StatusDisplayType::State => {
+                    if self.state.is_none() {
+                        return Err(ActivitySpecBuildError::StatusDisplayElementMissing("state"));
+                    }
+                }
+                _ => {}
+            },
+            None => {}
+        }
+
+        Ok(ActivitySpec {
             name: self.name,
             r#type: self.activity_type,
             status_display_type: self.status_display_type,
@@ -192,6 +225,6 @@ impl ActivityBuilder {
                     .collect()
             }),
             duration: self.duration,
-        }
+        })
     }
 }
