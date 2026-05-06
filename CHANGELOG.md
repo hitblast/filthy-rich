@@ -10,6 +10,7 @@ New features:
 
 - Added a new `ActivitySpec` type which basically replaces the current architecture of a mutable `Activity` to a post-built, immutable object which can be sent around.
 - Added `Activity::empty_spec` which gives an empty but usable `ActivitySpec` (basically executes `ActivitySpec::default` internally).
+- `ActivityResponseData` now includes an `ActivityPayload` object (flattened internally) instance for you to directly see which activity details were sent.
 
 Changes:
 
@@ -27,6 +28,7 @@ Internal changes:
 - Added an idiomatic `Opcode` enum and bettered code quality for matching opcodes in the `socket.read_frame()` loop inside of `PresenceRunner`.
 - Removed the use of `Arc` from the inner `readhalf` and `writehalf` fields of `DiscordSock` since the main loop doesn't cross thread boundaries.
 - Added a new `DisconnectReason::OldRelicComputer` error.
+- `ActivityPayload`, `TimestampPayload`, `ButtonPayload` and `AssetsPayload` are all public structs now. Their fields can be accessed using functions which point to borrowed data.
 
 ### v0.14.1
 

@@ -297,6 +297,8 @@ impl PresenceRunner {
 
                                                             if let Ok(d) = data {
                                                                 f(d)
+                                                            } else if let Err(e) = data{
+                                                                println!("{e}")
                                                             }
                                                         }
                                                     }

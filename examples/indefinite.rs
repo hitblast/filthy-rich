@@ -10,11 +10,10 @@ async fn main() -> Result<(), PresenceError> {
         .on_ready(|data| println!("Connected to user: {}", data.user().username()))
         .on_activity_send(|data| {
             println!(
-                "Activity sent to app: {} (running on {})\nMetadata: {}",
-                data.name().unwrap_or_default(),
+                "Activity sent to app! (running on {})\nCreated at: {}",
                 data.platform().unwrap_or_default(),
-                data.metadata().unwrap_or_default()
-            )
+                data.activity().created_at()
+            );
         })
         .on_disconnect(|f| println!("Disconnected: {f:?}"))
         .show_errors() // enables verbose error logging
