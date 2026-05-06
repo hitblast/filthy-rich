@@ -285,38 +285,35 @@ impl PresenceRunner {
                         frame = socket.read_frame() => {
                             match frame {
                                 Ok(frame) => {
-                                    match Opcode::try_from(frame.opcode) {
-                                        Ok(o) => match o {
-                                            Opcode::Frame => {
-                                                if let Ok(json) = serde_json::from_slice::<DynamicRPCFrame>(&frame.body) {
-                                                    if json.evt.as_deref() == Some("ERROR") && show_errors {
-                                                        eprintln!("Discord RPC DynamicRPCFrame error: {:?}", json.data);
-                                                    } else if json.cmd.as_deref() == Some("SET_ACTIVITY") {
-                                                        if let Some(f) = &on_activity_send {
-                                                            if let Some(data) = json.data {
-                                                                let data = serde_json::from_value::<ActivityResponseData>(data);
+                                    if let Ok(o) = Opcode::try_from(frame.opcode) { match o {
+                                        Opcode::Frame => {
+                                            if let Ok(json) = serde_json::from_slice::<DynamicRPCFrame>(&frame.body) {
+                                                if json.evt.as_deref() == Some("ERROR") && show_errors {
+                                                    eprintln!("Discord RPC DynamicRPCFrame error: {:?}", json.data);
+                                                } else if json.cmd.as_deref() == Some("SET_ACTIVITY") {
+                                                    if let Some(f) = &on_activity_send {
+                                                        if let Some(data) = json.data {
+                                                            let data = serde_json::from_value::<ActivityResponseData>(data);
 
-                                                                if let Ok(d) = data {
-                                                                    f(d)
-                                                                }
+                                                            if let Ok(d) = data {
+                                                                f(d)
                                                             }
                                                         }
                                                     }
                                                 }
-                                            },
-                                            Opcode::Close => break Some(DisconnectReason::ServerClosed),
-                                            Opcode::Ping => {
-                                                if let Err(e) = socket.send_frame(Opcode::Pong, frame.body).await {
-                                                    if show_errors {
-                                                        eprintln!("Discord RPC send_frame error: {e}");
-                                                    }
-                                                    break Some(DisconnectReason::SendFrameError(e.to_string()));
-                                                }
-                                            },
-                                            _ => {}
+                                            }
                                         },
-                                        Err(_) => {},
-                                    }
+                                        Opcode::Close => break Some(DisconnectReason::ServerClosed),
+                                        Opcode::Ping => {
+                                            if let Err(e) = socket.send_frame(Opcode::Pong, frame.body).await {
+                                                if show_errors {
+                                                    eprintln!("Discord RPC send_frame error: {e}");
+                                                }
+                                                break Some(DisconnectReason::SendFrameError(e.to_string()));
+                                            }
+                                        },
+                                        _ => {}
+                                    } }
                                 },
                                 Err(e) => {
                                     if show_errors {
