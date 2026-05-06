@@ -181,17 +181,13 @@ impl ActivityBuilder {
 
         if let Some(s) = self.status_display_type {
             match s {
-                StatusDisplayType::Details => {
-                    if self.details.is_none() {
-                        return Err(ActivitySpecBuildError::StatusDisplayElementMissing(
-                            "details",
-                        ));
-                    }
+                StatusDisplayType::Details if self.details.is_none() => {
+                    return Err(ActivitySpecBuildError::StatusDisplayElementMissing(
+                        "details",
+                    ));
                 }
-                StatusDisplayType::State => {
-                    if self.state.is_none() {
-                        return Err(ActivitySpecBuildError::StatusDisplayElementMissing("state"));
-                    }
+                StatusDisplayType::State if self.state.is_none() => {
+                    return Err(ActivitySpecBuildError::StatusDisplayElementMissing("state"));
                 }
                 _ => {}
             }
