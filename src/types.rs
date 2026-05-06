@@ -2,6 +2,7 @@
 //!
 use serde::{Deserialize, Serialize, ser::SerializeStruct};
 use serde_json::Value;
+use serde_repr::{Deserialize_repr, Serialize_repr};
 use std::{collections::HashMap, time::Duration};
 use uuid::Uuid;
 
@@ -50,9 +51,9 @@ pub(crate) struct PresenceHandshake<'a> {
 #[derive(Default, Clone)]
 pub struct ActivitySpec {
     name: Option<String>,
-    r#type: Option<u8>,
+    r#type: Option<ActivityType>,
     instance: Option<bool>,
-    status_display_type: Option<u8>,
+    status_display_type: Option<StatusDisplayType>,
     details: Option<String>,
     details_url: Option<String>,
     state: Option<String>,
@@ -62,34 +63,76 @@ pub struct ActivitySpec {
     duration: Option<Duration>,
 }
 
-#[derive(Serialize)]
-pub(crate) struct ActivityPayload {
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ActivityPayload {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
+    name: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub r#type: Option<u8>,
-    pub created_at: u64,
+    r#type: Option<ActivityType>,
+    created_at: u64,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub instance: Option<bool>,
+    instance: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub status_display_type: Option<u8>,
+    status_display_type: Option<StatusDisplayType>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub details: Option<String>,
+    details: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub details_url: Option<String>,
+    details_url: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub state: Option<String>,
+    state: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub state_url: Option<String>,
-    pub timestamps: TimestampPayload,
+    state_url: Option<String>,
+    timestamps: TimestampPayload,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub assets: Option<AssetsPayload>,
+    assets: Option<AssetsPayload>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub buttons: Option<Vec<ButtonPayload>>,
+    buttons: Option<Vec<ButtonPayload>>,
 }
 
 impl ActivityPayload {
-    pub fn create(value: ActivitySpec, session_start: u64) -> Result<Self, InnerParsingError> {
+    pub fn name(&self) -> Option<&str> {
+        self.name.as_deref()
+    }
+    pub fn activity_type(&self) -> Option<ActivityType> {
+        self.r#type
+    }
+    pub fn created_at(&self) -> u64 {
+        self.created_at
+    }
+    pub fn instance(&self) -> Option<bool> {
+        self.instance
+    }
+    pub fn status_display_type(&self) -> Option<StatusDisplayType> {
+        self.status_display_type
+    }
+    pub fn details(&self) -> Option<&str> {
+        self.details.as_deref()
+    }
+    pub fn details_url(&self) -> Option<&str> {
+        self.details_url.as_deref()
+    }
+    pub fn state(&self) -> Option<&str> {
+        self.state.as_deref()
+    }
+    pub fn state_url(&self) -> Option<&str> {
+        self.state_url.as_deref()
+    }
+    pub fn timestamps(&self) -> &TimestampPayload {
+        &self.timestamps
+    }
+    pub fn assets(&self) -> Option<&AssetsPayload> {
+        self.assets.as_ref()
+    }
+    pub fn buttons(&self) -> Option<&Vec<ButtonPayload>> {
+        self.buttons.as_ref()
+    }
+}
+
+impl ActivityPayload {
+    pub(crate) fn create(
+        value: ActivitySpec,
+        session_start: u64,
+    ) -> Result<Self, InnerParsingError> {
         let current_t = get_current_timestamp()?;
         let end_timestamp = value.duration.map(|d| current_t + d.as_secs());
 
@@ -113,14 +156,35 @@ impl ActivityPayload {
     }
 }
 
-#[derive(Clone)]
-pub(crate) struct AssetsPayload {
-    pub large_image: Option<String>,
-    pub large_url: Option<String>,
-    pub large_text: Option<String>,
-    pub small_image: Option<String>,
-    pub small_text: Option<String>,
-    pub small_url: Option<String>,
+#[derive(Debug, Deserialize, Clone)]
+pub struct AssetsPayload {
+    large_image: Option<String>,
+    large_url: Option<String>,
+    large_text: Option<String>,
+    small_image: Option<String>,
+    small_text: Option<String>,
+    small_url: Option<String>,
+}
+
+impl AssetsPayload {
+    pub fn large_image(&self) -> Option<&str> {
+        self.large_image.as_deref()
+    }
+    pub fn large_url(&self) -> Option<&str> {
+        self.large_url.as_deref()
+    }
+    pub fn large_text(&self) -> Option<&str> {
+        self.large_text.as_deref()
+    }
+    pub fn small_image(&self) -> Option<&str> {
+        self.small_image.as_deref()
+    }
+    pub fn small_url(&self) -> Option<&str> {
+        self.small_url.as_deref()
+    }
+    pub fn small_text(&self) -> Option<&str> {
+        self.small_text.as_deref()
+    }
 }
 
 impl Serialize for AssetsPayload {
@@ -156,17 +220,35 @@ impl Serialize for AssetsPayload {
     }
 }
 
-#[derive(Serialize, Clone)]
-pub(crate) struct ButtonPayload {
-    pub label: String,
-    pub url: String,
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ButtonPayload {
+    label: String,
+    url: String,
 }
 
-#[derive(Serialize, Clone)]
-pub(crate) struct TimestampPayload {
-    pub start: u64,
+impl ButtonPayload {
+    pub fn label(&self) -> &str {
+        self.label.as_ref()
+    }
+    pub fn url(&self) -> &str {
+        self.url.as_str()
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct TimestampPayload {
+    start: u64,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub end: Option<u64>,
+    end: Option<u64>,
+}
+
+impl TimestampPayload {
+    pub fn start(&self) -> u64 {
+        self.start
+    }
+    pub fn end(&self) -> Option<u64> {
+        self.end
+    }
 }
 
 #[derive(Deserialize)]
@@ -176,7 +258,7 @@ pub(crate) struct ReadyRPCFrame {
     pub data: Option<ReadyData>,
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 pub(crate) struct DynamicRPCFrame {
     #[allow(unused)]
     pub cmd: Option<String>,
@@ -207,8 +289,9 @@ pub(crate) enum IPCCommand {
 pub struct ActivityResponseData {
     application_id: Option<String>,
     platform: Option<String>,
-    name: Option<String>,
     metadata: Option<Value>,
+    #[serde(flatten)]
+    activity: ActivityPayload,
 }
 
 impl ActivityResponseData {
@@ -223,13 +306,13 @@ impl ActivityResponseData {
     }
 
     #[must_use]
-    pub fn name(&self) -> Option<&str> {
-        self.name.as_deref()
+    pub fn metadata(&self) -> Option<&Value> {
+        self.metadata.as_ref()
     }
 
     #[must_use]
-    pub fn metadata(&self) -> Option<&Value> {
-        self.metadata.as_ref()
+    pub fn activity(&self) -> &ActivityPayload {
+        &self.activity
     }
 }
 
@@ -309,7 +392,8 @@ impl DiscordUser {
 
 /// Enum indicating the activity type.
 #[repr(u8)]
-#[derive(Clone, Debug, Eq, PartialEq, Copy)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize_repr, Deserialize_repr, Copy)]
+#[serde(into = "u8", try_from = "u8")]
 pub enum ActivityType {
     Playing = 0,
     Listening = 2,
@@ -325,7 +409,7 @@ impl From<ActivityType> for u8 {
 
 /// Enum indicating which mode to use for indicating the status of an activity.
 #[repr(u8)]
-#[derive(Clone, Debug, Eq, PartialEq, Copy)]
+#[derive(Clone, Debug, Eq, PartialEq, Copy, Serialize_repr, Deserialize_repr)]
 pub enum StatusDisplayType {
     Name = 0,
     Details = 2,
@@ -501,8 +585,8 @@ impl ActivityBuilder {
     pub fn build(self) -> ActivitySpec {
         ActivitySpec {
             name: self.name,
-            r#type: self.activity_type.map(|f| f.into()),
-            status_display_type: self.status_display_type.map(|f| f.into()),
+            r#type: self.activity_type,
+            status_display_type: self.status_display_type,
             details: self.details,
             details_url: self.details_url,
             state: self.state,
