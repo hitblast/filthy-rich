@@ -31,18 +31,18 @@ async fn main() -> Result<(), PresenceError> {
     let activity_1 = Activity::new()
         .details("this runs")
         .state("for ten seconds")
-        .build();
+        .build()?;
 
     let activity_2 = Activity::new()
         .details("believe it")
         .state("or not")
-        .build();
+        .build()?;
 
     let closing_activity = Activity::new()
         .details("closing presence in...")
         .duration(Duration::from_secs(5))
         .small_image("status")
-        .build();
+        .build()?;
 
     // first run
     let client = runner.run(true).await?;

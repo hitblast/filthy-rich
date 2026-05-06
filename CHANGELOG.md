@@ -11,6 +11,7 @@ New features:
 - Added a new `ActivitySpec` type which basically replaces the current architecture of a mutable `Activity` to a post-built, immutable object which can be sent around.
 - Added `Activity::empty_spec` which gives an empty but usable `ActivitySpec` (basically executes `ActivitySpec::default` internally).
 - `ActivityResponseData` now includes an `ActivityPayload` object (flattened internally) instance for you to directly see which activity details were sent.
+- `ActivityBuilder::build` now returns `Result<ActivitySpec, ActivitySpecBuildError>` with all of its niceties (guardrails for you to bring your Rich Presence to life with safety).
 
 Changes:
 

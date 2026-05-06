@@ -8,7 +8,7 @@ async fn main() -> Result<(), PresenceError> {
         .name("cool app name")
         .details("Something?")
         .state("Probably~")
-        .build();
+        .build()?;
 
     let client = runner.run(true).await?;
     client.set_activity(activity).await?;

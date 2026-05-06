@@ -8,6 +8,17 @@ use std::{array::TryFromSliceError, time::SystemTimeError};
 use thiserror::Error;
 use tokio::{sync::oneshot::error::RecvError, task::JoinError};
 
+/// Error which happens if building a [`crate::types::ActivitySpec`] fails via [`crate::types::ActivityBuilder::build`].
+#[derive(Error, Debug)]
+pub enum ActivitySpecBuildError {
+    #[error("image assets are provided without the image itself")]
+    ImageAssetsTooEarly,
+    #[error("status display points to {0} but {0} is not set")]
+    StatusDisplayElementMissing(&'static str),
+    #[error("{0}_url provided but {0} itself is missing")]
+    ElementURLProvidedEarly(&'static str),
+}
+
 /// Details about why the RPC connection was lost.
 #[derive(Debug, Clone)]
 pub enum DisconnectReason {
@@ -22,16 +33,18 @@ pub enum DisconnectReason {
     Unknown,
 }
 
-/// Core error type for using with both [`super::PresenceRunner`] and [`super::PresenceClient`].
+/// Core convenience error type for usage with all types of `filthy-rich` operations, including [`crate::PresenceRunner`] and [`crate::PresenceClient`].
 #[derive(Error, Debug)]
 pub enum PresenceError {
     #[error("client error: {0}")]
     ClientError(#[from] PresenceClientError),
     #[error("runner error: {0}")]
     RunnerError(#[from] PresenceRunnerError),
+    #[error("activity spec build error: {0}")]
+    BuildError(#[from] ActivitySpecBuildError),
 }
 
-/// Points to errors specifically related to [`super::PresenceClient`].
+/// Points to errors specifically related to [`crate::PresenceClient`].
 #[derive(Error, Debug)]
 pub enum PresenceClientError {
     #[error("failed to send activity")]
@@ -40,7 +53,7 @@ pub enum PresenceClientError {
     OneShotRecvError(#[from] RecvError),
 }
 
-/// Points to errors specifically related to [`super::PresenceRunner`].
+/// Points to errors specifically related to [`crate::PresenceRunner`].
 #[derive(Error, Debug)]
 pub enum PresenceRunnerError {
     #[error("multiple `PresenceRunner::run` calls not allowed")]
