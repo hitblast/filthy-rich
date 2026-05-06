@@ -17,21 +17,27 @@ pub struct AssetsPayload {
 }
 
 impl AssetsPayload {
+    #[must_use]
     pub fn large_image(&self) -> Option<&str> {
         self.large_image.as_deref()
     }
+    #[must_use]
     pub fn large_url(&self) -> Option<&str> {
         self.large_url.as_deref()
     }
+    #[must_use]
     pub fn large_text(&self) -> Option<&str> {
         self.large_text.as_deref()
     }
+    #[must_use]
     pub fn small_image(&self) -> Option<&str> {
         self.small_image.as_deref()
     }
+    #[must_use]
     pub fn small_url(&self) -> Option<&str> {
         self.small_url.as_deref()
     }
+    #[must_use]
     pub fn small_text(&self) -> Option<&str> {
         self.small_text.as_deref()
     }
@@ -77,9 +83,11 @@ pub struct ButtonPayload {
 }
 
 impl ButtonPayload {
+    #[must_use]
     pub fn label(&self) -> &str {
         self.label.as_ref()
     }
+    #[must_use]
     pub fn url(&self) -> &str {
         self.url.as_str()
     }
@@ -93,9 +101,11 @@ pub struct TimestampPayload {
 }
 
 impl TimestampPayload {
+    #[must_use]
     pub fn start(&self) -> u64 {
         self.start
     }
+    #[must_use]
     pub fn end(&self) -> Option<u64> {
         self.end
     }
@@ -128,39 +138,51 @@ pub struct ActivityPayload {
 }
 
 impl ActivityPayload {
+    #[must_use]
     pub fn name(&self) -> Option<&str> {
         self.name.as_deref()
     }
+    #[must_use]
     pub fn activity_type(&self) -> Option<ActivityType> {
         self.r#type
     }
+    #[must_use]
     pub fn created_at(&self) -> u64 {
         self.created_at
     }
+    #[must_use]
     pub fn instance(&self) -> Option<bool> {
         self.instance
     }
+    #[must_use]
     pub fn status_display_type(&self) -> Option<StatusDisplayType> {
         self.status_display_type
     }
+    #[must_use]
     pub fn details(&self) -> Option<&str> {
         self.details.as_deref()
     }
+    #[must_use]
     pub fn details_url(&self) -> Option<&str> {
         self.details_url.as_deref()
     }
+    #[must_use]
     pub fn state(&self) -> Option<&str> {
         self.state.as_deref()
     }
+    #[must_use]
     pub fn state_url(&self) -> Option<&str> {
         self.state_url.as_deref()
     }
+    #[must_use]
     pub fn timestamps(&self) -> &TimestampPayload {
         &self.timestamps
     }
+    #[must_use]
     pub fn assets(&self) -> Option<&AssetsPayload> {
         self.assets.as_ref()
     }
+    #[must_use]
     pub fn buttons(&self) -> Option<&Vec<ButtonPayload>> {
         self.buttons.as_ref()
     }
