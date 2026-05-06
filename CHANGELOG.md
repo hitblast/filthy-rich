@@ -29,6 +29,7 @@ Internal changes:
 - Removed the use of `Arc` from the inner `readhalf` and `writehalf` fields of `DiscordSock` since the main loop doesn't cross thread boundaries.
 - Added a new `DisconnectReason::OldRelicComputer` error.
 - `ActivityPayload`, `TimestampPayload`, `ButtonPayload` and `AssetsPayload` are all public structs now. Their fields can be accessed using functions which point to borrowed data.
+- The `types` modules is now separated into many other modules internally.
 
 ### v0.14.1
 
