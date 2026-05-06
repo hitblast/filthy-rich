@@ -163,7 +163,7 @@ impl ActivityBuilder {
         self
     }
 
-    /// Parses the state of this builder into a usable [`ActivitySpec`] for you to pass through [`super::PresenceClient::set_activity`].
+    /// Parses the state of this builder into a usable [`ActivitySpec`] for you to pass through [`crate::PresenceClient::set_activity`].
     #[must_use]
     pub fn build(self) -> ActivitySpec {
         ActivitySpec {

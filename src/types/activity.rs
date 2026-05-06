@@ -6,7 +6,7 @@ use serde_repr::{Deserialize_repr, Serialize_repr};
 
 use crate::types::{ActivityPayload, AssetsPayload, ButtonPayload};
 
-/// A complete Rich Presence activity which can be sent to [`super::PresenceClient::set_activity`].
+/// A complete Rich Presence activity which can be sent to [`crate::PresenceClient::set_activity`].
 #[derive(Default, Clone)]
 pub struct ActivitySpec {
     pub(crate) name: Option<String>,
