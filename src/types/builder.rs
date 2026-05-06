@@ -165,7 +165,6 @@ impl ActivityBuilder {
     }
 
     /// Parses the state of this builder into a usable [`ActivitySpec`] for you to pass through [`crate::PresenceClient::set_activity`].
-    #[must_use]
     pub fn build(self) -> Result<ActivitySpec, ActivitySpecBuildError> {
         if (self.large_image.is_none() && (self.large_text.is_some() || self.large_url.is_some()))
             || (self.small_image.is_none()
@@ -180,8 +179,8 @@ impl ActivityBuilder {
             return Err(ActivitySpecBuildError::ElementURLProvidedEarly("state"));
         }
 
-        match self.status_display_type {
-            Some(s) => match s {
+        if let Some(s) = self.status_display_type {
+            match s {
                 StatusDisplayType::Details => {
                     if self.details.is_none() {
                         return Err(ActivitySpecBuildError::StatusDisplayElementMissing(
@@ -195,8 +194,7 @@ impl ActivityBuilder {
                     }
                 }
                 _ => {}
-            },
-            None => {}
+            }
         }
 
         Ok(ActivitySpec {
