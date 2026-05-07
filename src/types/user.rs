@@ -1,6 +1,8 @@
 use serde::Deserialize;
 use serde_json::Value;
 
+use crate::ds;
+
 /// Data received from READY event.
 #[derive(Debug, Clone, Deserialize)]
 pub struct ReadyData {
@@ -39,20 +41,9 @@ impl DiscordUser {
         &self.username
     }
 
-    #[must_use]
-    pub fn global_name(&self) -> Option<&str> {
-        self.global_name.as_deref()
-    }
-
-    #[must_use]
-    pub fn discriminator(&self) -> Option<&str> {
-        self.discriminator.as_deref()
-    }
-
-    #[must_use]
-    pub fn avatar(&self) -> Option<&str> {
-        self.avatar.as_deref()
-    }
+    ds!(global_name, "The global name for the user.");
+    ds!(discriminator, "The discriminator of the user.");
+    ds!(avatar, "The avatar of the user.");
 
     #[must_use]
     pub fn avatar_decoration_data(&self) -> Option<&Value> {

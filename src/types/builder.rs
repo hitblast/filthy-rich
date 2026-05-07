@@ -2,20 +2,9 @@ use std::{collections::HashMap, time::Duration};
 
 use crate::{
     errors::ActivitySpecBuildError,
+    nf,
     types::{ActivitySpec, ActivityType, AssetsPayload, ButtonPayload, StatusDisplayType},
 };
-
-macro_rules! nf {
-    ($name:ident, $doc:expr, $param:ident) => {
-        #[must_use]
-        #[doc = $doc]
-        pub fn $name(mut self, $param: impl Into<String>) -> Self {
-            let text = $param.into();
-            self.$name = if !text.is_empty() { Some(text) } else { None };
-            self
-        }
-    };
-}
 
 /// Represents a Discord Rich Presence activity which is yet to be built. To start building it into a usable [`ActivitySpec`],
 /// initialize a new [`ActivityBuilder`] with [`Activity::new`].

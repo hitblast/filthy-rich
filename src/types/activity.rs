@@ -4,7 +4,10 @@ use serde::Deserialize;
 use serde_json::Value;
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
-use crate::types::{ActivityPayload, AssetsPayload, ButtonPayload};
+use crate::{
+    ds,
+    types::{ActivityPayload, AssetsPayload, ButtonPayload},
+};
 
 /// A complete Rich Presence activity which can be sent to [`crate::PresenceClient::set_activity`].
 #[derive(Default, Clone)]
@@ -39,15 +42,10 @@ pub struct ActivityResponseData {
 }
 
 impl ActivityResponseData {
-    #[must_use]
-    pub fn application_id(&self) -> Option<&str> {
-        self.application_id.as_deref()
-    }
+    ds!(application_id, "The ID of the application");
+    ds!(platform, "The platform of the host.");
+    
 
-    #[must_use]
-    pub fn platform(&self) -> Option<&str> {
-        self.platform.as_deref()
-    }
 
     #[must_use]
     pub fn metadata(&self) -> Option<&Value> {
