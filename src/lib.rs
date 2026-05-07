@@ -19,6 +19,7 @@
 //! Library examples can be found in [this directory](https://github.com/hitblast/filthy-rich/tree/master/examples) on GitHub.
 
 mod client;
+mod macros;
 mod runner;
 mod socket;
 mod utils;
@@ -27,5 +28,4 @@ pub use client::PresenceClient;
 pub use runner::PresenceRunner;
 
 pub mod errors;
-pub(crate) mod macros;
 pub mod types;
