@@ -72,12 +72,6 @@ pub struct Frame {
 /// Defaults to 16 Mib (just an assumption), this can be changed later
 const MAX_FRAME_SIZE: usize = 16 * 1024 * 1024;
 
-macro_rules! acquire {
-    ($s:expr, $x:ident) => {
-        let mut $x = $s.lock().await;
-    };
-}
-
 #[cfg(target_family = "unix")]
 fn add_unix_candidates(candidates: &mut HashSet<String>, base_dir: &str) {
     candidates.insert(format!("{base_dir}/discord-ipc-")); // normal sane discord path
@@ -184,13 +178,13 @@ impl DiscordSock {
     }
 
     async fn read_exact(&self, buffer: &mut [u8]) -> Result<(), DiscordSockError> {
-        acquire!(&self.readhalf, stream);
+        let mut stream = self.readhalf.lock().await;
         stream.read_exact(buffer).await?;
         Ok(())
     }
 
     pub async fn write<T: AsRef<[u8]>>(&self, buffer: T) -> Result<(), DiscordSockError> {
-        acquire!(&self.writehalf, stream);
+        let mut stream = self.writehalf.lock().await;
         stream.write_all(buffer.as_ref()).await?;
         Ok(())
     }

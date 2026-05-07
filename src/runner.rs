@@ -11,16 +11,32 @@ use crate::{
     utils::get_current_timestamp,
 };
 
+macro_rules! callback {
+    ($t:ty) => {
+        Option<Box<dyn Fn($t) + Send + Sync + 'static>>
+    };
+}
+
+macro_rules! impl_callback {
+    ($name:ident, $arg:ty, $doc:expr) => {
+        #[doc = $doc]
+        pub fn $name<F: Fn($arg) + Send + Sync + 'static>(mut self, f: F) -> Self {
+            self.$name = Some(Box::new(f));
+            self
+        }
+    };
+}
+
 /// A runner that manages the Discord RPC background task.
 /// Create a runner, configure it, run it to get a client handle, then clone the handle for sharing.
 pub struct PresenceRunner {
     rx: Option<tokio::sync::mpsc::Receiver<IPCCommand>>,
     client: PresenceClient,
     join_handle: Option<JoinHandle<()>>,
-    on_ready: Option<Box<dyn Fn(ReadyData) + Send + Sync + 'static>>,
-    on_activity_send: Option<Box<dyn Fn(ActivityResponseData) + Send + Sync + 'static>>,
-    on_disconnect: Option<Box<dyn Fn(DisconnectReason) + Send + Sync + 'static>>,
-    on_retry: Option<Box<dyn Fn(usize) + Send + Sync + 'static>>,
+    on_ready: callback!(ReadyData),
+    on_activity_send: callback!(ActivityResponseData),
+    on_disconnect: callback!(DisconnectReason),
+    on_retry: callback!(usize),
     show_errors: bool,
     max_retries: usize,
 }
@@ -49,45 +65,41 @@ impl PresenceRunner {
         }
     }
 
-    /// Run a particular closure after receiving the READY event from the Discord RPC server.
-    ///
-    /// This event can fire multiple times depending on how many times the client needs to
-    /// reconnect with the Discord RPC server.
-    pub fn on_ready<F: Fn(ReadyData) + Send + Sync + 'static>(mut self, f: F) -> Self {
-        self.on_ready = Some(Box::new(f));
-        self
-    }
+    impl_callback!(
+        on_ready,
+        ReadyData,
+        "Runs a particular closure after receiving a READY event.
 
-    /// Run a particular closure after ensuring that a [`PresenceClient::set_activity`]
-    /// has successfully managed to pass its data through the IPC channel.
-    ///
-    /// This event can fire multiple times based on how many activities you set.
-    pub fn on_activity_send<F: Fn(ActivityResponseData) + Send + Sync + 'static>(
-        mut self,
-        f: F,
-    ) -> Self {
-        self.on_activity_send = Some(Box::new(f));
-        self
-    }
+This can fire multiple times depending on how many times the client
+needs to disconnect and reconnect."
+    );
 
-    /// Run a particular closure after the RPC connection is lost.
-    ///
-    /// This can fire multiple times if the client reconnects and disconnects again.
-    pub fn on_disconnect<F: Fn(DisconnectReason) + Send + Sync + 'static>(mut self, f: F) -> Self {
-        self.on_disconnect = Some(Box::new(f));
-        self
-    }
+    impl_callback!(
+        on_activity_send,
+        ActivityResponseData,
+        "Run a particular closure after ensuring that a [`PresenceClient::set_activity`] has successfully managed to pass its data through the IPC channel.
 
-    /// Run a particular closure when retrying for socket creation or handshake.
-    ///
-    /// This can fire multiple times, or for a limited amount of time depending on whether or not
-    /// an amount of maximum retries has been passed through [`PresenceRunner::set_max_retries`].
-    ///
-    /// The closure parameter is the count of retries done at the time of its execution.
-    pub fn on_retry<F: Fn(usize) + Send + Sync + 'static>(mut self, f: F) -> Self {
-        self.on_retry = Some(Box::new(f));
-        self
-    }
+This can fire multiple times."
+    );
+
+    impl_callback!(
+        on_disconnect,
+        DisconnectReason,
+        "Runs a particular closure after the RPC connection is lost.
+
+This can fire multiple times depending on how many times the client disconnects and reconnects again."
+    );
+
+    impl_callback!(
+        on_retry,
+        usize,
+        "Runs a particular closure when retrying for socket creation or handshake.
+
+This can fire multiple times, or for a limited amount depending on the amount of maximum
+retries that has been set (through [`PresenceRunner::set_max_retries`]).
+
+The closure parameter is the count of retries done at the time of its execution."
+    );
 
     /// Enable verbose error logging over [`std::io::stderr`] writes for RPC and code events.
     #[must_use]

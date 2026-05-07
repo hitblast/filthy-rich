@@ -32,6 +32,8 @@ Internal changes:
 - Added a new `DisconnectReason::OldRelicComputer` error.
 - `ActivityPayload`, `TimestampPayload`, `ButtonPayload` and `AssetsPayload` are all public structs now. Their fields can be accessed using functions which point to borrowed data.
 - The `types` modules is now separated into many other modules internally.
+- Optimized some reusable syntax for `PresenceRunner` with macros for a better developer experience.
+- Removed the `acquire!()` macro from `DiscordSock`.
 
 ### v0.14.1
 
