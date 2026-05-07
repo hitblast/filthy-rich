@@ -1,7 +1,7 @@
 use std::{
     sync::{
         Arc,
-        atomic::{AtomicU8, Ordering},
+        atomic::{AtomicUsize, Ordering},
     },
     time::Duration,
 };
@@ -12,7 +12,7 @@ use tokio::time::sleep;
 #[tokio::main]
 async fn main() -> Result<(), PresenceError> {
     // simple atomic counter
-    let count = Arc::new(AtomicU8::new(0));
+    let count = Arc::new(AtomicUsize::new(0));
 
     let mut runner = PresenceRunner::new("1463450870480900160")
         .on_ready(|data| println!("Connected to user: {}", data.user().username()))
