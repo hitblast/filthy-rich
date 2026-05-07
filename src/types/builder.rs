@@ -7,6 +7,7 @@ use crate::{
 
 macro_rules! nf {
     ($name:ident, $doc:expr, $param:ident) => {
+        #[must_use]
         #[doc = $doc]
         pub fn $name(mut self, $param: impl Into<String>) -> Self {
             let text = $param.into();
