@@ -89,7 +89,7 @@ impl PresenceRunner {
         self
     }
 
-    /// Enable verbose error logging for RPC and code events.
+    /// Enable verbose error logging over [`std::io::stderr`] writes for RPC and code events.
     #[must_use]
     pub fn show_errors(mut self) -> Self {
         self.show_errors = true;
