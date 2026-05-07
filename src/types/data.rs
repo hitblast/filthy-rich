@@ -188,7 +188,7 @@ pub struct AvatarDecorationData {
 }
 
 impl AvatarDecorationData {
-    /// The avatar decoration hash. See: https://docs.discord.com/developers/reference#image-formatting
+    /// The avatar decoration hash. See: <https://docs.discord.com/developers/reference#image-formatting>
     #[must_use]
     pub fn asset(&self) -> &str {
         &self.asset
@@ -221,7 +221,7 @@ impl NameplateData {
     pub fn sku_id(&self) -> &str {
         &self.sku_id
     }
-    /// Path to the nameplate asset. See: https://docs.discord.com/developers/reference#image-formatting
+    /// Path to the nameplate asset. See: <https://docs.discord.com/developers/reference#image-formatting>
     #[must_use]
     pub fn asset(&self) -> &str {
         &self.asset
