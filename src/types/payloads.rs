@@ -6,6 +6,16 @@ use crate::{
     utils::get_current_timestamp,
 };
 
+macro_rules! ds {
+    ($name:ident, $doc:expr) => {
+        #[must_use]
+        #[doc = $doc]
+        pub fn $name(&self) -> Option<&str> {
+            self.$name.as_deref()
+        }
+    };
+}
+
 /// The assets payload for the activity. Usually contains the large image and the small image, and their respective
 /// subsets of information (i.e. URL and text).
 #[derive(Debug, Deserialize, Clone)]
@@ -19,36 +29,12 @@ pub struct AssetsPayload {
 }
 
 impl AssetsPayload {
-    /// The key for the large image.
-    #[must_use]
-    pub fn large_image(&self) -> Option<&str> {
-        self.large_image.as_deref()
-    }
-    /// The URL the large image redirects to when clicked on.
-    #[must_use]
-    pub fn large_url(&self) -> Option<&str> {
-        self.large_url.as_deref()
-    }
-    /// The hover text for the large image.
-    #[must_use]
-    pub fn large_text(&self) -> Option<&str> {
-        self.large_text.as_deref()
-    }
-    /// The key for the small image.
-    #[must_use]
-    pub fn small_image(&self) -> Option<&str> {
-        self.small_image.as_deref()
-    }
-    /// The URL the small image redirects to when clicked on.
-    #[must_use]
-    pub fn small_url(&self) -> Option<&str> {
-        self.small_url.as_deref()
-    }
-    /// The hover text for the small image.
-    #[must_use]
-    pub fn small_text(&self) -> Option<&str> {
-        self.small_text.as_deref()
-    }
+    ds!(large_image, "The key for the large image.");
+    ds!(large_url, "The URL for the large image.");
+    ds!(large_text, "The hover text for the large image.");
+    ds!(small_image, "The key for the small image.");
+    ds!(small_url, "The URL for the small image.");
+    ds!(small_text, "The hover text for the small image.");
 }
 
 // redundant: already filtered during [`crate::types::ActivityBuilder::build`]
@@ -154,11 +140,8 @@ pub struct ActivityPayload {
 }
 
 impl ActivityPayload {
-    /// The name for the activity.
-    #[must_use]
-    pub fn name(&self) -> Option<&str> {
-        self.name.as_deref()
-    }
+    ds!(name, "The name for the activity.");
+
     /// The type of the activity.
     #[must_use]
     pub fn activity_type(&self) -> Option<ActivityType> {
@@ -179,26 +162,21 @@ impl ActivityPayload {
     pub fn status_display_type(&self) -> Option<StatusDisplayType> {
         self.status_display_type
     }
-    /// The details (top text) for the activity.
-    #[must_use]
-    pub fn details(&self) -> Option<&str> {
-        self.details.as_deref()
-    }
-    /// The URL which the details field redirects to when clicked on.
-    #[must_use]
-    pub fn details_url(&self) -> Option<&str> {
-        self.details_url.as_deref()
-    }
-    /// The state (usually the bottom text but could be top) for the activity.
-    #[must_use]
-    pub fn state(&self) -> Option<&str> {
-        self.state.as_deref()
-    }
-    /// The URL which the state field redirects to when clicked on.
-    #[must_use]
-    pub fn state_url(&self) -> Option<&str> {
-        self.state_url.as_deref()
-    }
+
+    ds!(details, "The details (top text) for the activity.");
+    ds!(
+        details_url,
+        "The URL which the details field redirects to when clicked on."
+    );
+    ds!(
+        state,
+        "The state (usually the bottom text but could be on top) for the activity."
+    );
+    ds!(
+        state_url,
+        "The URL which the state redirects to when clicked on."
+    );
+
     /// The timestamp payload object for the activity, containing the start and optionally the end timestamps.
     #[must_use]
     pub fn timestamps(&self) -> &TimestampPayload {
