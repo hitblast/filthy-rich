@@ -8,9 +8,3 @@ pub fn get_current_timestamp() -> Result<u64, InnerParsingError> {
 
     Ok(s)
 }
-
-pub fn filter_none_string(text: impl Into<String>) -> Option<String> {
-    let text: String = text.into();
-
-    if !text.is_empty() { Some(text) } else { None }
-}
