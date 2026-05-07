@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
-use crate::types::{AssetsPayload, ButtonPayload};
+use crate::types::payloads::{AssetsPayload, ButtonPayload};
 
 /// A complete Rich Presence activity which can be sent to [`crate::PresenceClient::set_activity`].
 #[derive(Default, Clone)]

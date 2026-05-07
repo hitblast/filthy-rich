@@ -4,7 +4,7 @@ use uuid::Uuid;
 
 use crate::{
     errors::InnerParsingError,
-    types::{ActivityPayload, ActivitySpec, ReadyData},
+    types::{ActivitySpec, data::ReadyData, payloads::ActivityPayload},
 };
 
 #[derive(Serialize)]

@@ -22,7 +22,7 @@ use tokio::{
 use std::env::var;
 
 use crate::errors::{DiscordSockError, InnerParsingError};
-use crate::types::{ActivityCommand, ActivityPayload, ActivitySpec, PresenceHandshake};
+use crate::types::{ActivityCommand, ActivitySpec, PresenceHandshake, payloads::ActivityPayload};
 
 #[cfg(target_family = "windows")]
 type ReadHalfCore = ReadHalf<NamedPipeClient>;

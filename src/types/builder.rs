@@ -3,7 +3,10 @@ use std::{collections::HashMap, time::Duration};
 use crate::{
     errors::ActivitySpecBuildError,
     nf,
-    types::{ActivitySpec, ActivityType, AssetsPayload, ButtonPayload, StatusDisplayType},
+    types::{
+        ActivitySpec, ActivityType, StatusDisplayType,
+        payloads::{AssetsPayload, ButtonPayload},
+    },
 };
 
 /// Represents a Discord Rich Presence activity which is yet to be built. To start building it into a usable [`ActivitySpec`],

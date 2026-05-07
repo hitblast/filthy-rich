@@ -6,7 +6,8 @@ use crate::{
     errors::{DisconnectReason, DiscordSockError, PresenceRunnerError},
     socket::{DiscordSock, Opcode},
     types::{
-        ActivityResponseData, ActivitySpec, DynamicRPCFrame, IPCCommand, ReadyData, ReadyRPCFrame,
+        ActivitySpec, DynamicRPCFrame, IPCCommand, ReadyRPCFrame,
+        data::{ActivityResponseData, ReadyData},
     },
     utils::get_current_timestamp,
 };

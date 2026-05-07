@@ -11,14 +11,14 @@ async fn main() -> Result<(), PresenceError> {
             println!(
                 "RPC version: v{}; Connected to user: {}",
                 data.version(),
-                data.user().global_name().unwrap_or_default(),
+                data.user.global_name().unwrap_or_default(),
             )
         })
         .on_activity_send(|data| {
             println!(
                 "Activity sent to app! (running on {})\nCreated at: {}",
                 data.platform().unwrap_or_default(),
-                data.activity().created_at()
+                data.activity.created_at()
             );
         })
         .on_disconnect(|f| println!("Disconnected: {f:?}"))
