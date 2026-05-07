@@ -3,20 +3,64 @@ use serde_json::Value;
 
 use crate::ds;
 
-/// Data received from READY event.
+/// Data received from a READY event.
 #[derive(Debug, Clone, Deserialize)]
 pub struct ReadyData {
+    v: u8,
+    config: ServerConfigurationData,
     user: DiscordUser,
 }
 
 impl ReadyData {
+    /// The user to whom you are connected.
     #[must_use]
     pub fn user(&self) -> &DiscordUser {
         &self.user
     }
+
+    /// The version of the RPC that is being used.
+    #[must_use]
+    pub fn version(&self) -> u8 {
+        self.v
+    }
+
+    /// The server configuration data for the RPC.
+    #[must_use]
+    pub fn config(&self) -> &ServerConfigurationData {
+        &self.config
+    }
 }
 
-/// Represents a Discord user.
+#[derive(Debug, Clone, Deserialize)]
+pub struct ServerConfigurationData {
+    cdn_host: String,
+    api_endpoint: String,
+    environment: String,
+}
+
+impl ServerConfigurationData {
+    /// The CDN for the RPC server.
+    #[must_use]
+    pub fn cdn_host(&self) -> &str {
+        &self.cdn_host
+    }
+
+    /// The API endpoint for the RPC server.
+    #[must_use]
+    pub fn api_endpoint(&self) -> &str {
+        &self.api_endpoint
+    }
+
+    /// The environment for the RPC server.
+    #[must_use]
+    pub fn environment(&self) -> &str {
+        &self.environment
+    }
+}
+
+/// Represents the Discord user that the RPC connection is present with.
+///
+/// NOTE: Only the fields which may need a documentation have been given one.
 #[derive(Debug, Clone, Deserialize)]
 pub struct DiscordUser {
     id: String,

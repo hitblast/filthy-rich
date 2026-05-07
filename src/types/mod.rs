@@ -12,4 +12,4 @@ pub use payloads::{ActivityPayload, AssetsPayload, ButtonPayload, TimestampPaylo
 pub(crate) use rpc::{
     ActivityCommand, DynamicRPCFrame, IPCCommand, PresenceHandshake, ReadyRPCFrame,
 };
-pub use user::{DiscordUser, ReadyData};
+pub use user::{DiscordUser, ReadyData, ServerConfigurationData};

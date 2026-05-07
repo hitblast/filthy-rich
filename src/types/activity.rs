@@ -57,6 +57,9 @@ impl ActivityResponseData {
 }
 
 /// Enum indicating the activity type.
+///
+/// NOTE: Not all six types are implemented by the Discord client itself, so only the four active
+/// ones have been implemented in this enum.
 #[repr(u8)]
 #[derive(Clone, Debug, Eq, PartialEq, Serialize_repr, Deserialize_repr, Copy)]
 #[serde(into = "u8", try_from = "u8")]
@@ -78,8 +81,8 @@ impl From<ActivityType> for u8 {
 #[derive(Clone, Debug, Eq, PartialEq, Copy, Serialize_repr, Deserialize_repr)]
 pub enum StatusDisplayType {
     Name = 0,
-    Details = 2,
     State = 1,
+    Details = 2,
 }
 
 impl From<StatusDisplayType> for u8 {
