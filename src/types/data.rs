@@ -1,7 +1,7 @@
 use serde::Deserialize;
 use serde_json::Value;
 
-use crate::{ds, types::ActivityPayload};
+use crate::{ds, types::payloads::ActivityPayload};
 
 /// Data received in response from the server after sending a SET_ACTIVITY command.
 ///
@@ -15,24 +15,18 @@ pub struct ActivityResponseData {
     application_id: Option<String>,
     platform: Option<String>,
     metadata: Option<Value>,
+    /// The activity payload which came in response to the send.
     #[serde(flatten)]
-    activity: ActivityPayload,
+    pub activity: ActivityPayload,
 }
 
 impl ActivityResponseData {
     ds!(application_id, "The ID of the application");
     ds!(platform, "The platform of the host.");
 
-    /// Undocumented metadata.
     #[must_use]
     pub fn metadata(&self) -> Option<&Value> {
         self.metadata.as_ref()
-    }
-
-    /// The activity payload which came in response to the send.
-    #[must_use]
-    pub fn activity(&self) -> &ActivityPayload {
-        &self.activity
     }
 }
 
@@ -40,27 +34,17 @@ impl ActivityResponseData {
 #[derive(Debug, Clone, Deserialize)]
 pub struct ReadyData {
     v: u8,
-    config: ServerConfigurationData,
-    user: DiscordUser,
+    /// The server configuration data for the RPC.
+    pub config: ServerConfigurationData,
+    /// The user to whom you are connected.
+    pub user: DiscordUser,
 }
 
 impl ReadyData {
-    /// The user to whom you are connected.
-    #[must_use]
-    pub fn user(&self) -> &DiscordUser {
-        &self.user
-    }
-
     /// The version of the RPC that is being used.
     #[must_use]
     pub fn version(&self) -> u8 {
         self.v
-    }
-
-    /// The server configuration data for the RPC.
-    #[must_use]
-    pub fn config(&self) -> &ServerConfigurationData {
-        &self.config
     }
 }
 
@@ -113,9 +97,12 @@ pub struct DiscordUser {
     flags: Option<isize>,
     premium_type: Option<isize>,
     public_flags: Option<isize>,
-    avatar_decoration_data: Option<Value>,
-    collectibles: Option<Value>,
-    primary_guild: Option<Value>,
+    /// Data for the user's avatar decoration.
+    pub avatar_decoration_data: Option<AvatarDecorationData>,
+    /// Data for the user's collectibles.
+    pub collectibles: Option<Collectibles>,
+    /// The user's primary guild.
+    pub primary_guild: Option<PrimaryGuild>,
 }
 
 impl DiscordUser {
@@ -191,22 +178,88 @@ impl DiscordUser {
     pub fn public_flags(&self) -> Option<isize> {
         self.public_flags
     }
+}
 
-    /// Data for the user's avatar decoration.
+/// The data for the user’s avatar decoration.
+#[derive(Debug, Clone, Deserialize)]
+pub struct AvatarDecorationData {
+    asset: String,
+    sku_id: String,
+}
+
+impl AvatarDecorationData {
+    /// The avatar decoration hash. See: https://docs.discord.com/developers/reference#image-formatting
     #[must_use]
-    pub fn avatar_decoration_data(&self) -> Option<&Value> {
-        self.avatar_decoration_data.as_ref()
+    pub fn asset(&self) -> &str {
+        &self.asset
     }
-
-    /// Data for the user's collectibles.
+    /// ID of the avatar decoration's SKU.
     #[must_use]
-    pub fn collectibles(&self) -> Option<&Value> {
-        self.collectibles.as_ref()
+    pub fn sku_id(&self) -> &str {
+        &self.sku_id
     }
+}
 
-    /// The user's primary guild.
+/// The collectibles the user has, excluding Avatar Decorations and Profile Effects.
+#[derive(Debug, Clone, Deserialize)]
+pub struct Collectibles {
+    /// The nameplate the user has.
+    pub nameplate: Option<NameplateData>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct NameplateData {
+    sku_id: String,
+    asset: String,
+    label: String,
+    palette: String,
+}
+
+impl NameplateData {
+    /// ID of the nameplate SKU.
     #[must_use]
-    pub fn primary_guild(&self) -> Option<&Value> {
-        self.primary_guild.as_ref()
+    pub fn sku_id(&self) -> &str {
+        &self.sku_id
+    }
+    /// Path to the nameplate asset. See: https://docs.discord.com/developers/reference#image-formatting
+    #[must_use]
+    pub fn asset(&self) -> &str {
+        &self.asset
+    }
+    /// The label of this nameplate. Currently unused.
+    #[must_use]
+    pub fn label(&self) -> &str {
+        &self.label
+    }
+    /// Background color of the nameplate, one of:
+    /// `crimson`, `berry`, `sky`, `teal`, `forest`, `bubble_gum`, `violet`, `cobalt`, `clover`, `lemon`, `white`
+    #[must_use]
+    pub fn palette(&self) -> &str {
+        &self.palette
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct PrimaryGuild {
+    identity_guild_id: Option<String>,
+    identity_enabled: Option<bool>,
+    tag: Option<String>,
+    badge: Option<String>,
+}
+
+impl PrimaryGuild {
+    ds!(identity_guild_id, "The ID of the user's primary guild.");
+    ds!(
+        tag,
+        "The text of the user's server tag. Limited to 4 characters."
+    );
+    ds!(badge, "The server tag badge hash.");
+
+    /// Whether the user is displaying the primary guild’s server tag.
+    /// This can be `None` if the system clears the identity, e.g. the server no longer supports tags.
+    /// This will be `false` if the user manually removes their tag.
+    #[must_use]
+    pub fn identity_enabled(&self) -> Option<bool> {
+        self.identity_enabled
     }
 }
