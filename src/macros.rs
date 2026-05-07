@@ -1,3 +1,8 @@
+//! Public, crate-only macros
+//!
+
+/// Generates a function `$name` which takes a `$param` and sets the
+/// `$name` field of a struct to be a `None`-filtered `String`.
 #[macro_export]
 macro_rules! nf {
     ($name:ident, $doc:expr, $param:ident) => {
@@ -11,6 +16,8 @@ macro_rules! nf {
     };
 }
 
+/// Generates a function `$name` which returns an `Option<&str>` by
+/// dereferencing the `$name` field of a struct.
 #[macro_export]
 macro_rules! ds {
     ($name:ident, $doc:expr) => {
