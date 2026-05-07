@@ -44,8 +44,6 @@ pub struct ActivityResponseData {
 impl ActivityResponseData {
     ds!(application_id, "The ID of the application");
     ds!(platform, "The platform of the host.");
-    
-
 
     #[must_use]
     pub fn metadata(&self) -> Option<&Value> {
