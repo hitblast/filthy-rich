@@ -11,6 +11,9 @@ New features:
 - Added a new `ActivitySpec` type which basically replaces the current architecture of a mutable `Activity` to a post-built, immutable object which can be sent around.
 - Added `Activity::empty_spec` which gives an empty but usable `ActivitySpec` (basically executes `ActivitySpec::default` internally).
 - `ActivityResponseData` now includes an `ActivityPayload` object (flattened internally) instance for you to directly see which activity details were sent.
+- New fields in `ReadyData`:
+  - `v` - RPC version (`u8`)
+  - `config` - server configuration (a new `ServerConfigurationData` object)
 
 Changes:
 
