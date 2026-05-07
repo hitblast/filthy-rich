@@ -130,37 +130,37 @@ impl ActivityBuilder {
 
     /// Large image for your activity (e.g., game icon).
     pub fn large_image(mut self, key: impl Into<String>) -> Self {
-        self.large_image = Some(key.into());
+        self.large_image = filter_none_string(key);
         self
     }
 
     /// Text for the large image of your activity.
     pub fn large_text(mut self, text: impl Into<String>) -> Self {
-        self.large_text = Some(text.into());
+        self.large_text = filter_none_string(text);
         self
     }
 
     /// URL for the large image of your activity.
     pub fn large_url(mut self, url: impl Into<String>) -> Self {
-        self.large_url = Some(url.into());
+        self.large_url = filter_none_string(url);
         self
     }
 
     /// Small image for your activity (e.g., game icon).
     pub fn small_image(mut self, key: impl Into<String>) -> Self {
-        self.small_image = Some(key.into());
+        self.small_image = filter_none_string(key);
         self
     }
 
     /// Text for the small image of your activity.
     pub fn small_text(mut self, text: impl Into<String>) -> Self {
-        self.small_text = Some(text.into());
+        self.small_text = filter_none_string(text);
         self
     }
 
     /// URL for the small image of your activity.
     pub fn small_url(mut self, url: impl Into<String>) -> Self {
-        self.small_url = Some(url.into());
+        self.small_url = filter_none_string(url);
         self
     }
 
