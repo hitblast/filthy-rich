@@ -1,13 +1,8 @@
 use std::time::Duration;
 
-use serde::Deserialize;
-use serde_json::Value;
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
-use crate::{
-    ds,
-    types::{ActivityPayload, AssetsPayload, ButtonPayload},
-};
+use crate::types::{AssetsPayload, ButtonPayload};
 
 /// A complete Rich Presence activity which can be sent to [`crate::PresenceClient::set_activity`].
 #[derive(Default, Clone)]
@@ -23,37 +18,6 @@ pub struct ActivitySpec {
     pub(crate) assets: Option<AssetsPayload>,
     pub(crate) buttons: Option<Vec<ButtonPayload>>,
     pub(crate) duration: Option<Duration>,
-}
-
-/// Data received in response from the server after sending a SET_ACTIVITY command.
-///
-/// Note that this struct doesn't fully cover the schema of the actual response since most of the fields
-/// that are found are the same as the actual activity that is sent.
-///
-/// More importantly, open-source implementations of RPC (e.g. arRPC) have different response styles so
-/// the actual output of this struct may vary depending on what client you are using.
-#[derive(Debug, Clone, Deserialize)]
-pub struct ActivityResponseData {
-    application_id: Option<String>,
-    platform: Option<String>,
-    metadata: Option<Value>,
-    #[serde(flatten)]
-    activity: ActivityPayload,
-}
-
-impl ActivityResponseData {
-    ds!(application_id, "The ID of the application");
-    ds!(platform, "The platform of the host.");
-
-    #[must_use]
-    pub fn metadata(&self) -> Option<&Value> {
-        self.metadata.as_ref()
-    }
-
-    #[must_use]
-    pub fn activity(&self) -> &ActivityPayload {
-        &self.activity
-    }
 }
 
 /// Enum indicating the activity type.

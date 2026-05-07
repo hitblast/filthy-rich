@@ -2,14 +2,14 @@
 //!
 mod activity;
 mod builder;
+mod data;
 mod payloads;
 mod rpc;
-mod user;
 
-pub use activity::{ActivityResponseData, ActivitySpec, ActivityType, StatusDisplayType};
+pub use activity::{ActivitySpec, ActivityType, StatusDisplayType};
 pub use builder::{Activity, ActivityBuilder};
+pub use data::{ActivityResponseData, DiscordUser, ReadyData, ServerConfigurationData};
 pub use payloads::{ActivityPayload, AssetsPayload, ButtonPayload, TimestampPayload};
 pub(crate) use rpc::{
     ActivityCommand, DynamicRPCFrame, IPCCommand, PresenceHandshake, ReadyRPCFrame,
 };
-pub use user::{DiscordUser, ReadyData, ServerConfigurationData};

@@ -11,7 +11,7 @@ async fn main() -> Result<(), PresenceError> {
             println!(
                 "RPC version: v{}; Connected to user: {}",
                 data.version(),
-                data.user().username(),
+                data.user().global_name().unwrap_or_default(),
             )
         })
         .on_activity_send(|data| {
