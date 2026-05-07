@@ -21,6 +21,8 @@ impl PresenceClient {
 
     /// Sets/updates the Discord Rich presence activity.
     /// The runner must be started before calling this.
+    ///
+    /// NOTE: This will NOT wait for the activity to finish becoming online.
     pub async fn set_activity(&self, activity: ActivitySpec) -> Result<(), PresenceClientError> {
         let activity = Box::new(activity);
 
@@ -33,6 +35,8 @@ impl PresenceClient {
     }
 
     /// Clears a previously set Discord Rich Presence activity.
+    ///
+    /// NOTE: This will NOT wait for the activity to finish clearing.
     pub async fn clear_activity(&self) -> Result<(), PresenceClientError> {
         self.tx
             .send(IPCCommand::ClearActivity)
@@ -43,6 +47,8 @@ impl PresenceClient {
     }
 
     /// Closes the current connection if any.
+    ///
+    /// This is a semi-blocking call and does wait for the runner thread to respond to the signal being sent.
     pub async fn close(&self) -> Result<(), PresenceClientError> {
         let (done_tx, done_rx) = oneshot::channel::<()>();
 
