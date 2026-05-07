@@ -3,8 +3,18 @@ use std::{collections::HashMap, time::Duration};
 use crate::{
     errors::ActivitySpecBuildError,
     types::{ActivitySpec, ActivityType, AssetsPayload, ButtonPayload, StatusDisplayType},
-    utils::filter_none_string,
 };
+
+macro_rules! nf {
+    ($name:ident, $doc:expr, $param:ident) => {
+        #[doc = $doc]
+        pub fn $name(mut self, $param: impl Into<String>) -> Self {
+            let text = $param.into();
+            self.$name = if !text.is_empty() { Some(text) } else { None };
+            self
+        }
+    };
+}
 
 /// Represents a Discord Rich Presence activity which is yet to be built. To start building it into a usable [`ActivitySpec`],
 /// initialize a new [`ActivityBuilder`] with [`Activity::new`].
@@ -54,40 +64,42 @@ pub struct ActivityBuilder {
 }
 
 impl ActivityBuilder {
-    /// Name of the activity.
-    pub fn name(mut self, text: impl Into<String>) -> Self {
-        self.name = filter_none_string(text);
-        self
-    }
+    nf!(name, "Name of the activity.", name);
+    nf!(details, "Top text for your activity.", text);
+    nf!(details_url, "URL for the top text of your activity.", url);
+    nf!(
+        state,
+        "Bottom text (top if field `details` is missing) for your activity.",
+        text
+    );
+    nf!(state_url, "URL for the state of your activity.", url);
+    nf!(
+        large_image,
+        "Large image for your activity (e.g. game icon)",
+        key
+    );
+    nf!(
+        large_text,
+        "Text for the large image of your activity.",
+        text
+    );
+    nf!(large_url, "URL for the large image of your activity.", url);
+    nf!(
+        small_image,
+        "Small image for your activity (e.g. game icon)",
+        key
+    );
+    nf!(
+        small_text,
+        "Text for the small image of your activity.",
+        text
+    );
+    nf!(small_url, "URL for the small image of your activity.", url);
 
     /// The type of activity you want to create.
     #[must_use]
     pub fn activity_type(mut self, r#type: ActivityType) -> Self {
         self.activity_type = Some(r#type);
-        self
-    }
-
-    /// Top text for your activity.
-    pub fn details(mut self, text: impl Into<String>) -> Self {
-        self.details = filter_none_string(text);
-        self
-    }
-
-    /// URL for the top text of your activity.
-    pub fn details_url(mut self, url: impl Into<String>) -> Self {
-        self.details_url = filter_none_string(url);
-        self
-    }
-
-    /// Bottom text for your activity.
-    pub fn state(mut self, text: impl Into<String>) -> Self {
-        self.state = filter_none_string(text);
-        self
-    }
-
-    /// URL for the bottom text of your activity.
-    pub fn state_url(mut self, url: impl Into<String>) -> Self {
-        self.state_url = filter_none_string(url);
         self
     }
 
@@ -125,42 +137,6 @@ impl ActivityBuilder {
             self.buttons = Some(btns);
         };
 
-        self
-    }
-
-    /// Large image for your activity (e.g., game icon).
-    pub fn large_image(mut self, key: impl Into<String>) -> Self {
-        self.large_image = filter_none_string(key);
-        self
-    }
-
-    /// Text for the large image of your activity.
-    pub fn large_text(mut self, text: impl Into<String>) -> Self {
-        self.large_text = filter_none_string(text);
-        self
-    }
-
-    /// URL for the large image of your activity.
-    pub fn large_url(mut self, url: impl Into<String>) -> Self {
-        self.large_url = filter_none_string(url);
-        self
-    }
-
-    /// Small image for your activity (e.g., game icon).
-    pub fn small_image(mut self, key: impl Into<String>) -> Self {
-        self.small_image = filter_none_string(key);
-        self
-    }
-
-    /// Text for the small image of your activity.
-    pub fn small_text(mut self, text: impl Into<String>) -> Self {
-        self.small_text = filter_none_string(text);
-        self
-    }
-
-    /// URL for the small image of your activity.
-    pub fn small_url(mut self, url: impl Into<String>) -> Self {
-        self.small_url = filter_none_string(url);
         self
     }
 
