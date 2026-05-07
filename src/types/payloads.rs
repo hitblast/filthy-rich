@@ -1,20 +1,11 @@
 use serde::{Deserialize, Serialize, ser::SerializeStruct};
 
 use crate::{
+    ds,
     errors::InnerParsingError,
     types::{ActivitySpec, ActivityType, StatusDisplayType},
     utils::get_current_timestamp,
 };
-
-macro_rules! ds {
-    ($name:ident, $doc:expr) => {
-        #[must_use]
-        #[doc = $doc]
-        pub fn $name(&self) -> Option<&str> {
-            self.$name.as_deref()
-        }
-    };
-}
 
 /// The assets payload for the activity. Usually contains the large image and the small image, and their respective
 /// subsets of information (i.e. URL and text).

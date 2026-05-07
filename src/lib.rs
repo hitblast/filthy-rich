@@ -27,4 +27,5 @@ pub use client::PresenceClient;
 pub use runner::PresenceRunner;
 
 pub mod errors;
+pub(crate) mod macros;
 pub mod types;
