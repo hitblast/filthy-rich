@@ -6,6 +6,8 @@ use crate::{
     utils::get_current_timestamp,
 };
 
+/// The assets payload for the activity. Usually contains the large image and the small image, and their respective
+/// subsets of information (i.e. URL and text).
 #[derive(Debug, Deserialize, Clone)]
 pub struct AssetsPayload {
     pub(crate) large_image: Option<String>,
@@ -17,32 +19,39 @@ pub struct AssetsPayload {
 }
 
 impl AssetsPayload {
+    /// The key for the large image.
     #[must_use]
     pub fn large_image(&self) -> Option<&str> {
         self.large_image.as_deref()
     }
+    /// The URL the large image redirects to when clicked on.
     #[must_use]
     pub fn large_url(&self) -> Option<&str> {
         self.large_url.as_deref()
     }
+    /// The hover text for the large image.
     #[must_use]
     pub fn large_text(&self) -> Option<&str> {
         self.large_text.as_deref()
     }
+    /// The key for the small image.
     #[must_use]
     pub fn small_image(&self) -> Option<&str> {
         self.small_image.as_deref()
     }
+    /// The URL the small image redirects to when clicked on.
     #[must_use]
     pub fn small_url(&self) -> Option<&str> {
         self.small_url.as_deref()
     }
+    /// The hover text for the small image.
     #[must_use]
     pub fn small_text(&self) -> Option<&str> {
         self.small_text.as_deref()
     }
 }
 
+// redundant: already filtered during [`crate::types::ActivityBuilder::build`]
 impl Serialize for AssetsPayload {
     fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
     where
@@ -76,6 +85,7 @@ impl Serialize for AssetsPayload {
     }
 }
 
+/// Represents a button of the activity.
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ButtonPayload {
     pub(crate) label: String,
@@ -83,16 +93,19 @@ pub struct ButtonPayload {
 }
 
 impl ButtonPayload {
+    /// The label for the button.
     #[must_use]
     pub fn label(&self) -> &str {
         self.label.as_ref()
     }
+    /// The URL the button redirects to when clicked on.
     #[must_use]
     pub fn url(&self) -> &str {
         self.url.as_str()
     }
 }
 
+/// The timestamps (calculated with `UNIX_EPOCH`) for the activity.
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct TimestampPayload {
     start: u64,
@@ -101,16 +114,19 @@ pub struct TimestampPayload {
 }
 
 impl TimestampPayload {
+    /// The starting timestamp for the activity.
     #[must_use]
     pub fn start(&self) -> u64 {
         self.start
     }
+    /// The end timestamp for the activity.
     #[must_use]
     pub fn end(&self) -> Option<u64> {
         self.end
     }
 }
 
+/// Represents an immutable activity which has been sent.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ActivityPayload {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -138,50 +154,64 @@ pub struct ActivityPayload {
 }
 
 impl ActivityPayload {
+    /// The name for the activity.
     #[must_use]
     pub fn name(&self) -> Option<&str> {
         self.name.as_deref()
     }
+    /// The type of the activity.
     #[must_use]
     pub fn activity_type(&self) -> Option<ActivityType> {
         self.r#type
     }
+    /// When the activity was created.
     #[must_use]
     pub fn created_at(&self) -> u64 {
         self.created_at
     }
+    /// Whether or not the activity is an instance.
     #[must_use]
     pub fn instance(&self) -> Option<bool> {
         self.instance
     }
+    /// Which element the activity displays as the status (primary text on members banner).
     #[must_use]
     pub fn status_display_type(&self) -> Option<StatusDisplayType> {
         self.status_display_type
     }
+    /// The details (top text) for the activity.
     #[must_use]
     pub fn details(&self) -> Option<&str> {
         self.details.as_deref()
     }
+    /// The URL which the details field redirects to when clicked on.
     #[must_use]
     pub fn details_url(&self) -> Option<&str> {
         self.details_url.as_deref()
     }
+    /// The state (usually the bottom text but could be top) for the activity.
     #[must_use]
     pub fn state(&self) -> Option<&str> {
         self.state.as_deref()
     }
+    /// The URL which the state field redirects to when clicked on.
     #[must_use]
     pub fn state_url(&self) -> Option<&str> {
         self.state_url.as_deref()
     }
+    /// The timestamp payload object for the activity, containing the start and optionally the end timestamps.
     #[must_use]
     pub fn timestamps(&self) -> &TimestampPayload {
         &self.timestamps
     }
+    /// The assets payload object for the activity, containing all the detials of the
+    /// assets which were optionally sent with the activity.
     #[must_use]
     pub fn assets(&self) -> Option<&AssetsPayload> {
         self.assets.as_ref()
     }
+    /// The buttons for the activity. Each button is represented by a [`ButtonPayload`] object instance, and returned as a borrowed
+    /// vector of multiple [`ButtonPayload`] objects through this function.
     #[must_use]
     pub fn buttons(&self) -> Option<&Vec<ButtonPayload>> {
         self.buttons.as_ref()
