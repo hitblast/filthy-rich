@@ -2,9 +2,13 @@ name: Lints CI
 
 on:
   push:
+    paths:
+      - "**.rs"
     branches:
       - master
   pull_request:
+    paths:
+      - "**.rs"
     branches: [master]
 
 env:
