@@ -44,9 +44,6 @@ async fn main() -> Result<(), PresenceError> {
 > [!WARNING]
 > Even though this library follows most of Discord's spec-sheet, some features which are not even implemented in Discord itself but were included in the documentation have been skipped for a smoother experience.
 
-> [!WARNING]
-> Expect breaking changes before the `v1.0.0` release.
-
 > [!NOTE]
 > Requires Rust 1.85.0 or later (MSRV).
 
@@ -61,18 +58,19 @@ cargo add filthy-rich
 ## 🌺 Features
 
 - Really easy to implement; just create a client ID at the [Discord Developer Portal](https://discord.com/developers) and you're good to go.
-- Fruitful `Activity` builder guaranteed to make you fall in love with setting presences.
-- Ergonomic `on_ready`, `on_activity_send` etc. events to aid you with states when building apps.
-- Clean whilst being easy; properly handles Discord's responses.
+- Fruitful `Activity` builder with a *type-state builder pattern* - guaranteed to make you fall in love with setting presences.
+- Ergonomic `on_ready`, `on_activity_send` and other event registers to work with are *all included*.
+- 100% coverage of the usable spec of Discord RPC (presence-related only).
 - Fully asynchronous but easily wrappable for synchronous usage.
-- Client-runner architecture for easy-adding in state-driven GUI apps or games.
-- Auto-reconnect on failure.
+- *Client-runner architecture* for easy use in multithreaded apps or contexts.
+- Automatically reconnects on disconnect, making your presence persist for prolonged periods of time.
+- (TODO) Supports optional auth flow for elevated privileges.
 
 ## Starter Snippets
 
 Examples are included with the project. See these:
 
-1. For an indefinitely running rich presence, [see this](./examples/indefinite.rs).
+1. For an indefinitely running, elaborate rich presence, [see this](./examples/indefinite.rs).
 2. For an timed, changing rich presence, [see this](./examples/timed.rs).
 3. For a very simple snippet, [see this](./examples/simple.rs).
 
@@ -94,9 +92,11 @@ https://docs.rs/filthy-rich/latest/filthy_rich/
 
 ## Yet another library?
 
-I don't want to bother myself with manually implementing Rich Presence everytime I start working on an app, so I created this library to make things much simpler; I just want a client that does its job in the background.
+I did not want to bother myself with manually implementing Rich Presence everytime I start working on an app, so I created this library to make things much simpler; I just wanted a client that does its job in the background.
 
 Also, other implementations felt much more complex to me and also felt like they lacked precise control. This is a more "spread-out" opinion and might hide the truth for some libraries, but yeah, nothing better than throwing your own luck into making yet another IPC RPC client.
+
+An attempt to make an eye-candy syntax for this library was also inspired by [discord.py](https://github.com/Rapptz/discord.py).
 
 ## Contributing
 
@@ -104,14 +104,15 @@ If you want to contribute to this project, be sure to follow the [contribution g
 
 ### Contributors
 
-Thanks to the amazing contributors for adding to this repository:
+Amazing people adding amazing stuff to this library:
 
 - [Sirokovsk](https://github.com/Sirokovsk)
 - [Sreehari425](https://github.com/Sreehari425)
 
 ## Changelog
 
-For a comprehensive release changelog of this library, please refer to [CHANGELOG.md](./CHANGELOG.md).
+For a comprehensive release changelog of this library, please refer to [CHANGELOG.md](./CHANGELOG.md). The release changelogs are compiled from
+the core changelog as a part of the release CI.
 
 ## License
 
