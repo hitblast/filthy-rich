@@ -90,19 +90,23 @@ cargo run --example simple  # ex. 3
 
 https://docs.rs/filthy-rich/latest/filthy_rich/
 
-## Yet another library?
+## Off-Topic Literature
+
+#### Yet another library?
 
 I did not want to bother myself with manually implementing Rich Presence everytime I start working on an app, so I created this library to make things much simpler; I just wanted a client that does its job in the background.
 
 Also, other implementations felt much more complex to me and also felt like they lacked precise control. This is a more "spread-out" opinion and might hide the truth for some libraries, but yeah, nothing better than throwing your own luck into making yet another IPC RPC client.
 
-An attempt to make an eye-candy syntax for this library was also inspired by [discord.py](https://github.com/Rapptz/discord.py).
+#### Inspirations
+
+An attempt to make an eye-candy syntax for this library was inspired by [discord.py](https://github.com/Rapptz/discord.py).
 
 ## Contributing
 
 If you want to contribute to this project, be sure to follow the [contribution guidelines](./CONTRIBUTING.md) and prep your environment as mentioned before doing so. Thank you for showing your interest!
 
-### Contributors
+#### Contributors
 
 Amazing people adding amazing stuff to this library:
 
