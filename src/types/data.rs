@@ -1,3 +1,6 @@
+//! Return types for various functions and closures for filthy-rich. Most of these do not need to be
+//! imported separately as these are already supplied to you, and are clonable and can be debugged.
+//!
 use serde::Deserialize;
 use serde_json::Value;
 

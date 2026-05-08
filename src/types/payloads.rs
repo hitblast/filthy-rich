@@ -1,3 +1,6 @@
+//! Payload types which are used for immutable sends and receives. These do not need to be imported separately as the
+//! values are often already supplied to you via closures, and are clonable / can be debugged.
+//!
 use serde::{Deserialize, Serialize, ser::SerializeStruct};
 
 use crate::{
