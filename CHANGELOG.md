@@ -4,7 +4,7 @@ Active since v0.8.5.
 
 ### v1.0.0
 
-Finally, a stabilized API for `filthy-rich`! (work-in-progress still)
+Finally, a stabilized API for `filthy-rich`!
 
 New features:
 
