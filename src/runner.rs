@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{sync::Arc, time::Duration};
 use tokio::{sync::mpsc, task::JoinHandle, time::sleep};
 
 use crate::{
@@ -12,17 +12,13 @@ use crate::{
     utils::get_current_timestamp,
 };
 
-macro_rules! callback {
-    ($t:ty) => {
-        Option<Box<dyn Fn($t) + Send + Sync + 'static>>
-    };
-}
+type Callback<T> = Option<Arc<dyn Fn(T) + Send + Sync + 'static>>;
 
 macro_rules! impl_callback {
     ($name:ident, $arg:ty, $doc:expr) => {
         #[doc = $doc]
         pub fn $name<F: Fn($arg) + Send + Sync + 'static>(mut self, f: F) -> Self {
-            self.$name = Some(Box::new(f));
+            self.$name = Some(Arc::new(f));
             self
         }
     };
@@ -34,10 +30,10 @@ pub struct PresenceRunner {
     rx: Option<tokio::sync::mpsc::Receiver<IPCCommand>>,
     client: PresenceClient,
     join_handle: Option<JoinHandle<()>>,
-    on_ready: callback!(ReadyData),
-    on_activity_send: callback!(ActivityResponseData),
-    on_disconnect: callback!(DisconnectReason),
-    on_retry: callback!(usize),
+    on_ready: Callback<ReadyData>,
+    on_activity_send: Callback<ActivityResponseData>,
+    on_disconnect: Callback<DisconnectReason>,
+    on_retry: Callback<usize>,
     show_errors: bool,
     max_retries: usize,
 }
@@ -156,7 +152,7 @@ The closure parameter is the count of retries done at the time of its execution.
             let mut session_start: Option<u64> = None;
 
             'outer: loop {
-                if max_retries != 0 && retries == max_retries {
+                if max_retries != 0 && retries >= max_retries {
                     break;
                 }
 
@@ -168,7 +164,8 @@ The closure parameter is the count of retries done at the time of its execution.
 
                         retries += 1;
                         if let Some(f) = &on_retry {
-                            f(retries)
+                            let f = f.clone();
+                            tokio::spawn(async move { f(retries) });
                         }
 
                         continue;
@@ -181,7 +178,8 @@ The closure parameter is the count of retries done at the time of its execution.
 
                     retries += 1;
                     if let Some(f) = &on_retry {
-                        f(retries)
+                        let f = f.clone();
+                        tokio::spawn(async move { f(retries) });
                     }
 
                     continue;
@@ -209,7 +207,8 @@ The closure parameter is the count of retries done at the time of its execution.
                             }
                             if let Some(f) = &on_ready {
                                 if let Some(data) = json.data {
-                                    f(data);
+                                    let f = f.clone();
+                                    tokio::spawn(async move { f(data) });
                                 }
                             }
                             connected = true;
@@ -239,8 +238,6 @@ The closure parameter is the count of retries done at the time of its execution.
                 // generic loop for receiving commands and responding to pings from Discord itself
                 let disconnect_reason = loop {
                     tokio::select! {
-                        biased;
-
                         cmd = rx.recv() => {
                             match cmd {
                                 Some(cmd) => {
@@ -309,7 +306,8 @@ The closure parameter is the count of retries done at the time of its execution.
                                                             let data = serde_json::from_value::<ActivityResponseData>(data);
 
                                                             if let Ok(d) = data {
-                                                                f(d)
+                                                                let f = f.clone();
+                                                                tokio::spawn(async move { f(d)});
                                                             } else if let Err(e) = data{
                                                                 println!("{e}")
                                                             }

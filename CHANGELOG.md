@@ -2,6 +2,18 @@
 
 Active since v0.8.5.
 
+### v1.0.1
+
+This release primarily focuses on optimizations.
+
+Changes:
+
+- Closures passed in with `on_*` event functions now spawn those functions in a separate thread for leaving no obstructions in the inner loop.
+
+Internal changes:
+
+- The `tokio::select!` for receiving commands and reading frames is now unbiased again, giving equal priority to both of them.
+
 ### v1.0.0
 
 Finally, a stabilized API for `filthy-rich`!
