@@ -1,4 +1,4 @@
-//! Public, crate-only macros
+//! Public, crate-only macros.
 //!
 
 /// Generates a function `$name` which takes a `$param` and sets the
