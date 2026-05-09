@@ -194,7 +194,7 @@ The closure parameter is the count of retries done at the time of its execution.
                         }
                     };
 
-                    if frame.opcode != 1 {
+                    if Opcode::Frame != frame.opcode {
                         continue;
                     }
 
@@ -295,7 +295,7 @@ The closure parameter is the count of retries done at the time of its execution.
                         frame = socket.read_frame() => {
                             match frame {
                                 Ok(frame) => {
-                                    if let Ok(o) = Opcode::try_from(frame.opcode) { match o {
+                                    match frame.opcode {
                                         Opcode::Frame => {
                                             if let Ok(json) = serde_json::from_slice::<DynamicRPCFrame>(&frame.body) {
                                                 if json.evt.as_deref() == Some("ERROR") && show_errors {
@@ -326,7 +326,7 @@ The closure parameter is the count of retries done at the time of its execution.
                                             }
                                         },
                                         _ => {}
-                                    } }
+                                    }
                                 },
                                 Err(e) => {
                                     if show_errors {

@@ -2,6 +2,13 @@
 
 Active since v0.8.5.
 
+### v1.0.2
+
+Internal changes:
+
+- `Opcode` is now `PartialEq`-compatible and is directly parsed with `read_frame()` as a part of the `Frame` object.
+- Made `DiscordSock::write` private as `send_frame` is used throughout most of the code, and bare-bones writes are risky.
+
 ### v1.0.1
 
 This release primarily focuses on optimizations.

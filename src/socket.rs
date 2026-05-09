@@ -34,6 +34,7 @@ type ReadHalfCore = OwnedReadHalf;
 #[cfg(target_family = "unix")]
 type WriteHalfCore = OwnedWriteHalf;
 
+#[derive(PartialEq)]
 #[repr(u32)]
 pub enum Opcode {
     Handshake = 0,
@@ -65,7 +66,7 @@ impl TryFrom<u32> for Opcode {
 }
 
 pub struct Frame {
-    pub opcode: u32,
+    pub opcode: Opcode,
     pub body: Bytes,
 }
 
@@ -183,7 +184,7 @@ impl DiscordSock {
         Ok(())
     }
 
-    pub async fn write<T: AsRef<[u8]>>(&self, buffer: T) -> Result<(), DiscordSockError> {
+    async fn write<T: AsRef<[u8]>>(&self, buffer: T) -> Result<(), DiscordSockError> {
         let mut stream = self.writehalf.lock().await;
         stream.write_all(buffer.as_ref()).await?;
         Ok(())
@@ -208,7 +209,7 @@ impl DiscordSock {
         self.read_exact(&mut body).await?;
 
         Ok(Frame {
-            opcode,
+            opcode: Opcode::try_from(opcode).map_err(|_| DiscordSockError::OpcodeError)?,
             body: body.freeze(),
         })
     }

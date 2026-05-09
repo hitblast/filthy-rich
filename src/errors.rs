@@ -80,6 +80,8 @@ pub(crate) enum DiscordSockError {
     PayloadTooLarge { size: usize, max: usize },
     #[error("failed to parse: {0}")]
     ParseError(#[from] InnerParsingError),
+    #[error("invalid opcode")]
+    OpcodeError,
 }
 
 #[derive(Error, Debug)]
