@@ -84,6 +84,10 @@ This can fire multiple times."
         DisconnectReason,
         "Runs a particular closure after the RPC connection is lost.
 
+Unlike `on_retry`, this fires only when a previously initialized connection drops, which means that you should prefer
+`on_retry` instead if you want more accurate responses to the initial connect or handshake failures, and `on_disconnect`
+for reacting to post-connection failures.
+
 This can fire multiple times depending on how many times the client disconnects and reconnects again."
     );
 
@@ -143,10 +147,9 @@ The closure parameter is the count of retries done at the time of its execution.
         let on_retry = self.on_retry.take();
 
         let join_handle = tokio::spawn(async move {
-            let mut backoff = 1;
+            const RETRY_DELAY: Duration = Duration::from_secs(1);
             let mut last_activity: Option<ActivitySpec> = None;
             let mut ready_tx = Some(ready_tx);
-            let mut connected = false;
             let mut retries = 0;
 
             let mut session_start: Option<u64> = None;
@@ -160,7 +163,7 @@ The closure parameter is the count of retries done at the time of its execution.
                 let mut socket = match DiscordSock::new().await {
                     Ok(s) => s,
                     Err(_) => {
-                        sleep(Duration::from_secs(backoff)).await;
+                        sleep(RETRY_DELAY).await;
 
                         retries += 1;
                         if let Some(f) = &on_retry {
@@ -174,7 +177,7 @@ The closure parameter is the count of retries done at the time of its execution.
 
                 // initial handshake
                 if socket.do_handshake(&client_id).await.is_err() {
-                    sleep(Duration::from_secs(backoff)).await;
+                    sleep(RETRY_DELAY).await;
 
                     retries += 1;
                     if let Some(f) = &on_retry {
@@ -190,7 +193,13 @@ The closure parameter is the count of retries done at the time of its execution.
                     let frame = match socket.read_frame().await {
                         Ok(f) => f,
                         Err(_) => {
-                            break;
+                            sleep(RETRY_DELAY).await;
+                            retries += 1;
+                            if let Some(f) = &on_retry {
+                                let f = f.clone();
+                                tokio::spawn(async move { f(retries) });
+                            }
+                            continue 'outer;
                         }
                     };
 
@@ -211,7 +220,9 @@ The closure parameter is the count of retries done at the time of its execution.
                                     tokio::spawn(async move { f(data) });
                                 }
                             }
-                            connected = true;
+
+                            // reset retires here
+                            retries = 0;
                             break;
                         }
 
@@ -231,9 +242,6 @@ The closure parameter is the count of retries done at the time of its execution.
                         }
                     }
                 }
-
-                backoff = 1;
-                retries = 0;
 
                 // generic loop for receiving commands and responding to pings from Discord itself
                 let disconnect_reason = loop {
@@ -344,15 +352,11 @@ The closure parameter is the count of retries done at the time of its execution.
                     }
                 };
 
-                if connected {
-                    if let Some(f) = &on_disconnect {
-                        f(disconnect_reason.unwrap_or(DisconnectReason::Unknown));
-                    }
-                    connected = false;
+                if let Some(f) = &on_disconnect {
+                    f(disconnect_reason.unwrap_or(DisconnectReason::Unknown));
                 }
 
-                sleep(Duration::from_secs(backoff)).await;
-                backoff = (backoff * 2).min(4);
+                sleep(RETRY_DELAY).await;
             }
         });
 

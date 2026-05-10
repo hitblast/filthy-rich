@@ -4,10 +4,15 @@ Active since v0.8.5.
 
 ### v1.0.2
 
+Changes:
+
+- Removed exponential backoff as it was largely unused. It has been replaced with a `RETRY_DELAY` constant with the value being 1 second.
+
 Internal changes:
 
 - `Opcode` is now `PartialEq`-compatible and is directly parsed with `read_frame()` as a part of the `Frame` object.
 - Made `DiscordSock::write` private as `send_frame` is used throughout most of the code, and bare-bones writes are risky.
+- Removed the internal `connect` flag.
 
 ### v1.0.1
 
