@@ -24,6 +24,17 @@ macro_rules! impl_callback {
     };
 }
 
+macro_rules! retry {
+    ($retries:ident, $on_retry:expr) => {
+        sleep(RETRY_DELAY).await;
+        $retries += 1;
+        if let Some(f) = &$on_retry {
+            let f = f.clone();
+            tokio::spawn(async move { f($retries) });
+        }
+    };
+}
+
 /// A runner that manages the Discord RPC background task.
 /// Create a runner, configure it, run it to get a client handle, then clone the handle for sharing.
 pub struct PresenceRunner {
@@ -163,28 +174,14 @@ The closure parameter is the count of retries done at the time of its execution.
                 let mut socket = match DiscordSock::new().await {
                     Ok(s) => s,
                     Err(_) => {
-                        sleep(RETRY_DELAY).await;
-
-                        retries += 1;
-                        if let Some(f) = &on_retry {
-                            let f = f.clone();
-                            tokio::spawn(async move { f(retries) });
-                        }
-
+                        retry!(retries, on_retry);
                         continue;
                     }
                 };
 
                 // initial handshake
                 if socket.do_handshake(&client_id).await.is_err() {
-                    sleep(RETRY_DELAY).await;
-
-                    retries += 1;
-                    if let Some(f) = &on_retry {
-                        let f = f.clone();
-                        tokio::spawn(async move { f(retries) });
-                    }
-
+                    retry!(retries, on_retry);
                     continue;
                 }
 
@@ -193,12 +190,7 @@ The closure parameter is the count of retries done at the time of its execution.
                     let frame = match socket.read_frame().await {
                         Ok(f) => f,
                         Err(_) => {
-                            sleep(RETRY_DELAY).await;
-                            retries += 1;
-                            if let Some(f) = &on_retry {
-                                let f = f.clone();
-                                tokio::spawn(async move { f(retries) });
-                            }
+                            retry!(retries, on_retry);
                             continue 'outer;
                         }
                     };

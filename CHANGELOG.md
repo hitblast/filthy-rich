@@ -2,6 +2,12 @@
 
 Active since v0.8.5.
 
+### v1.0.3
+
+Internal changes:
+
+- `runner.rs`: Added a new `retry!` macro for minimizing some duplicate code related to incrementing the retries counter and executing the passed closure from `on_retry`.
+
 ### v1.0.2
 
 Changes:
