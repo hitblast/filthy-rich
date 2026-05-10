@@ -93,7 +93,7 @@ https://docs.rs/filthy-rich/latest/filthy_rich/
 ## TODO
 
 - [x] Full Rich Presence coverage.
-- [ ] Full RPC over IPC coverage (as provided by Discord).
+- [ ] Full RPC-over-IPC coverage (as provided by Discord).
 - [ ] New commands for subscribing to events, sending channel/guild commands etc.
 
 ## Off-Topic Literature
