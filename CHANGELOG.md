@@ -6,7 +6,8 @@ Active since v0.8.5.
 
 Internal changes:
 
-- `runner.rs`: Added a new `retry!` macro for minimizing some duplicate code related to incrementing the retries counter and executing the passed closure from `on_retry`.
+- Added a new `retry!` macro for minimizing some duplicate code related to incrementing the retries counter and executing the passed closure from `on_retry`.
+- Added a new `str!` macro globally which aids with generating functions returning `&str` from `String` fields (yeah, I'm lazy).
 
 ### v1.0.2
 

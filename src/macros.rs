@@ -10,8 +10,21 @@ macro_rules! nf {
         #[doc = $doc]
         pub fn $name(mut self, $param: impl Into<String>) -> Self {
             let text = $param.into();
-            self.$name = if !text.is_empty() { Some(text) } else { None };
+            self.$name = (!text.is_empty()).then_some(text);
             self
+        }
+    };
+}
+
+/// Generates a function which returns a borrowed `&str` for a given `String` field
+/// named `$name` in a class.
+#[macro_export]
+macro_rules! str {
+    ($name:ident, $doc:expr) => {
+        #[must_use]
+        #[doc = $doc]
+        pub fn $name(&self) -> &str {
+            &self.$name
         }
     };
 }

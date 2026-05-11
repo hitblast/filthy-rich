@@ -2,6 +2,7 @@ use tokio::sync::{mpsc::Sender, oneshot};
 
 use crate::{
     errors::PresenceClientError,
+    str,
     types::{ActivitySpec, IPCCommand},
 };
 
@@ -13,11 +14,7 @@ pub struct PresenceClient {
 }
 
 impl PresenceClient {
-    /// Returns the client ID.
-    #[must_use]
-    pub fn client_id(&self) -> &str {
-        &self.client_id
-    }
+    str!(client_id, "Returns the client ID.");
 
     /// Sets/updates the Discord Rich presence activity.
     /// The runner must be started before calling this.

@@ -4,7 +4,7 @@
 use serde::Deserialize;
 use serde_json::Value;
 
-use crate::{ds, types::payloads::ActivityPayload};
+use crate::{ds, str, types::payloads::ActivityPayload};
 
 /// Data received in response from the server after sending a SET_ACTIVITY command.
 ///
@@ -60,23 +60,9 @@ pub struct ServerConfigurationData {
 }
 
 impl ServerConfigurationData {
-    /// The CDN for the RPC server.
-    #[must_use]
-    pub fn cdn_host(&self) -> &str {
-        &self.cdn_host
-    }
-
-    /// The API endpoint for the RPC server.
-    #[must_use]
-    pub fn api_endpoint(&self) -> &str {
-        &self.api_endpoint
-    }
-
-    /// The environment for the RPC server.
-    #[must_use]
-    pub fn environment(&self) -> &str {
-        &self.environment
-    }
+    str!(cdn_host, "The CDN for the RPC server.");
+    str!(api_endpoint, "The API endpoint for the RPC server.");
+    str!(environment, "The environment for the RPC server.");
 }
 
 /// Represents the Discord user that the RPC connection is present with.
@@ -109,23 +95,12 @@ pub struct DiscordUser {
 }
 
 impl DiscordUser {
-    /// The user's ID.
-    #[must_use]
-    pub fn id(&self) -> &str {
-        &self.id
-    }
-
-    /// The user's username, not unique across the platform.
-    #[must_use]
-    pub fn username(&self) -> &str {
-        &self.username
-    }
-
-    /// The user's Discord-tag.
-    #[must_use]
-    pub fn discriminator(&self) -> &str {
-        &self.discriminator
-    }
+    str!(id, "The user's ID.");
+    str!(
+        username,
+        "The user's username, not unique across the platform."
+    );
+    str!(discriminator, "The user's Discord-tag.");
 
     ds!(global_name, "The user's display name, if set.");
     ds!(avatar, "The user's avatar hash.");
@@ -191,16 +166,11 @@ pub struct AvatarDecorationData {
 }
 
 impl AvatarDecorationData {
-    /// The avatar decoration hash. See: <https://docs.discord.com/developers/reference#image-formatting>
-    #[must_use]
-    pub fn asset(&self) -> &str {
-        &self.asset
-    }
-    /// ID of the avatar decoration's SKU.
-    #[must_use]
-    pub fn sku_id(&self) -> &str {
-        &self.sku_id
-    }
+    str!(
+        asset,
+        "The avatar decoration hash. See: <https://docs.discord.com/developers/reference#image-formatting>"
+    );
+    str!(sku_id, "ID of the avatar decoration's SKU.");
 }
 
 /// The collectibles the user has, excluding Avatar Decorations and Profile Effects.
@@ -219,27 +189,16 @@ pub struct NameplateData {
 }
 
 impl NameplateData {
-    /// ID of the nameplate SKU.
-    #[must_use]
-    pub fn sku_id(&self) -> &str {
-        &self.sku_id
-    }
-    /// Path to the nameplate asset. See: <https://docs.discord.com/developers/reference#image-formatting>
-    #[must_use]
-    pub fn asset(&self) -> &str {
-        &self.asset
-    }
-    /// The label of this nameplate. Currently unused.
-    #[must_use]
-    pub fn label(&self) -> &str {
-        &self.label
-    }
-    /// Background color of the nameplate, one of:
-    /// `crimson`, `berry`, `sky`, `teal`, `forest`, `bubble_gum`, `violet`, `cobalt`, `clover`, `lemon`, `white`
-    #[must_use]
-    pub fn palette(&self) -> &str {
-        &self.palette
-    }
+    str!(sku_id, "ID of the nameplate SKU.");
+    str!(
+        asset,
+        "Path to the nameplate asset. See: <https://docs.discord.com/developers/reference#image-formatting>"
+    );
+    str!(label, "The label of this nameplate. Currently unused.");
+    str!(
+        palette,
+        "Background color of the nameplate, one of: `crimson`, `berry`, `sky`, `teal`, `forest`, `bubble_gum`, `violet`, `cobalt`, `clover`, `lemon`, `white`"
+    );
 }
 
 #[derive(Debug, Clone, Deserialize)]

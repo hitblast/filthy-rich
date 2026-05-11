@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize, ser::SerializeStruct};
 use crate::{
     ds,
     errors::InnerParsingError,
+    str,
     types::{ActivitySpec, ActivityType, StatusDisplayType},
     utils::get_current_timestamp,
 };
@@ -73,16 +74,8 @@ pub struct ButtonPayload {
 }
 
 impl ButtonPayload {
-    /// The label for the button.
-    #[must_use]
-    pub fn label(&self) -> &str {
-        self.label.as_ref()
-    }
-    /// The URL the button redirects to when clicked on.
-    #[must_use]
-    pub fn url(&self) -> &str {
-        self.url.as_str()
-    }
+    str!(label, "The label for the button");
+    str!(url, "The URL the button redirects to when clicked on.");
 }
 
 /// The timestamps (calculated with `UNIX_EPOCH`) for the activity.
