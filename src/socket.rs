@@ -166,28 +166,25 @@ impl DiscordSock {
         Err(DiscordSockError::PipeConnectionFailed)
     }
 
-    pub async fn new() -> Result<Self, DiscordSockError> {
-        let result = Self::get_socket().await;
-
-        match result {
-            Ok((readhalf, writehalf)) => Ok(Self {
-                readhalf: Mutex::new(readhalf),
-                writehalf: Mutex::new(writehalf),
-            }),
-            Err(e) => Err(e),
-        }
-    }
-
     async fn read_exact(&self, buffer: &mut [u8]) -> Result<(), DiscordSockError> {
         let mut stream = self.readhalf.lock().await;
         stream.read_exact(buffer).await?;
         Ok(())
     }
 
-    async fn write<T: AsRef<[u8]>>(&self, buffer: T) -> Result<(), DiscordSockError> {
+    async fn write_all<T: AsRef<[u8]>>(&self, buffer: T) -> Result<(), DiscordSockError> {
         let mut stream = self.writehalf.lock().await;
         stream.write_all(buffer.as_ref()).await?;
         Ok(())
+    }
+
+    pub async fn new() -> Result<Self, DiscordSockError> {
+        let result = Self::get_socket().await?;
+
+        Ok(Self {
+            readhalf: Mutex::new(result.0),
+            writehalf: Mutex::new(result.1),
+        })
     }
 
     pub async fn read_frame(&self) -> Result<Frame, DiscordSockError> {
@@ -233,7 +230,7 @@ impl DiscordSock {
         buf.extend_from_slice(&(body.len() as u32).to_le_bytes());
         buf.extend_from_slice(body);
 
-        self.write(buf.freeze()).await?;
+        self.write_all(buf.freeze()).await?;
         Ok(())
     }
 
@@ -244,10 +241,6 @@ impl DiscordSock {
             write.flush().await?;
             write.shutdown().await?;
         }
-
-        // for future me: in case you've forgotten how it works, essentially on Windows, since
-        // we return Ok(()) here, the struct instance is dropped, hence dropping the NamedPipes
-        // in the process - closing the socket.
 
         Ok(())
     }
