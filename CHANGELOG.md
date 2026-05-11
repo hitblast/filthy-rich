@@ -2,6 +2,12 @@
 
 Active since v0.8.5.
 
+### v1.0.4
+
+New features:
+
+- Added `PresenceRunner::can_connect` for checking if a Discord client is available for connection. This works without the initialization of `PresenceRunner`.
+
 ### v1.0.3
 
 Internal changes:

@@ -4,7 +4,7 @@ use tokio::{sync::mpsc, task::JoinHandle, time::sleep};
 use crate::{
     PresenceClient,
     errors::{DisconnectReason, DiscordSockError, PresenceRunnerError},
-    socket::{DiscordSock, Opcode},
+    socket::{self, DiscordSock, Opcode},
     types::{
         ActivitySpec, DynamicRPCFrame, IPCCommand, ReadyRPCFrame,
         data::{ActivityResponseData, ReadyData},
@@ -50,6 +50,13 @@ pub struct PresenceRunner {
 }
 
 impl PresenceRunner {
+    /// Whether or not a Discord client is available for connection. Returns `false` if there is no
+    /// "running" Discord client and `true` if at least one client is running.
+    #[must_use]
+    pub fn can_connect() -> bool {
+        socket::get_pipe_path().is_some()
+    }
+
     #[must_use]
     /// Create a new [`PresenceRunner`] instance. Requires the client ID of your chosen app from the
     /// [Discord Developer Portal](https://discord.com/developers/applications).

@@ -95,7 +95,7 @@ fn add_unix_candidates(candidates: &mut HashSet<String>, base_dir: &str) {
     }
 }
 
-fn get_pipe_path() -> Option<PathBuf> {
+pub(crate) fn get_pipe_path() -> Option<PathBuf> {
     let mut candidates = HashSet::new();
 
     #[cfg(target_os = "windows")]
