@@ -55,18 +55,9 @@ Add `filthy-rich` to your project with this command:
 cargo add filthy-rich
 ```
 
-## 🌺 Features
+Then, you can start writing code by reviewing one of these:
 
-- Really easy to implement; just create a client ID at the [Discord Developer Portal](https://discord.com/developers) and you're good to go.
-- Fruitful `Activity` builder with a *type-state builder pattern* - guaranteed to make you fall in love with setting presences.
-- Ergonomic `on_ready`, `on_activity_send` and other event registers to work with are *all included*.
-- 100% coverage of the usable spec of Discord RPC (presence-related only).
-- Fully asynchronous but easily wrappable for synchronous usage.
-- *Client-runner architecture* for easy use in multithreaded apps or contexts.
-- Automatically reconnects on disconnect, making your presence persist for prolonged periods of time.
-- (TODO) Supports optional auth flow for elevated privileges.
-
-## Starter Snippets
+#### Starter Snippets
 
 Examples are included with the project. See these:
 
@@ -85,6 +76,17 @@ cargo run --example indefinite  # ex. 1
 cargo run --example timed  # ex. 2
 cargo run --example simple  # ex. 3
 ```
+
+## 🌺 Features
+
+- Really easy to implement; just create a client ID at the [Discord Developer Portal](https://discord.com/developers) and you're good to go.
+- Fruitful `Activity` builder with a *type-state builder pattern* - guaranteed to make you fall in love with setting presences.
+- Ergonomic `on_ready`, `on_activity_send` and other event registers to work with are *all included*.
+- 100% coverage of the usable spec of Discord RPC (presence-related only).
+- Fully asynchronous but easily wrappable for synchronous usage.
+- *Client-runner architecture* for easy use in multithreaded apps or contexts.
+- Automatically reconnects on disconnect, making your presence persist for prolonged periods of time.
+- (TODO) Supports optional auth flow for elevated privileges.
 
 ## API Reference (docs.rs)
 
