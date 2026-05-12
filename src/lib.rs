@@ -24,8 +24,8 @@ mod runner;
 mod socket;
 mod utils;
 
-pub use client::PresenceClient;
-pub use runner::PresenceRunner;
+pub use client::{PresenceClient, RPCClient};
+pub use runner::{PresenceRunner, RPCRunner};
 
 pub mod errors;
 pub mod types;

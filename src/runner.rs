@@ -1,5 +1,9 @@
 use std::{sync::Arc, time::Duration};
-use tokio::{sync::mpsc, task::JoinHandle, time::sleep};
+use tokio::{
+    sync::mpsc::{self, Receiver},
+    task::JoinHandle,
+    time::sleep,
+};
 
 use crate::{
     PresenceClient,
@@ -13,6 +17,9 @@ use crate::{
 };
 
 type Callback<T> = Option<Arc<dyn Fn(T) + Send + Sync + 'static>>;
+
+/// Type alias for [`PresenceRunner`].
+pub type RPCRunner = PresenceRunner;
 
 macro_rules! impl_callback {
     ($name:ident, $arg:ty, $doc:expr) => {

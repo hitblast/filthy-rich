@@ -7,6 +7,9 @@ Active since v0.8.5.
 New features:
 
 - Added `PresenceRunner::can_connect` for checking if a Discord client is available for connection. This works without the initialization of `PresenceRunner`.
+- Added two new type aliases:
+  - `RPCRunner` (alias for `PresenceRunner`)
+  - `RPCClient` (alias for `PresenceClient`)
 
 ### v1.0.3
 

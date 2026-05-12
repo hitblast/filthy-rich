@@ -6,6 +6,9 @@ use crate::{
     types::{ActivitySpec, IPCCommand},
 };
 
+/// Type alias for [`PresenceClient`].
+pub type RPCClient = PresenceClient;
+
 /// A client handle for communicating with [`super::PresenceRunner`] and its inner loop.
 #[derive(Debug, Clone)]
 pub struct PresenceClient {
