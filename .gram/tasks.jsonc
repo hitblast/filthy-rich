@@ -1,0 +1,16 @@
+// Project tasks configuration. See gram://docs/tasks for documentation.
+//
+[
+  {
+    "label": "check lint",
+    "command": "./scripts/check-lint.sh",
+    "use_new_terminal": true,
+    "allow_concurrent_runs": false,
+    "reveal": "always",
+    "reveal_target": "center",
+    "hide": "on_success",
+    "shell": "system",
+    "show_summary": true,
+    "show_command": true,
+  },
+]
