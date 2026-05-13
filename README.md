@@ -114,7 +114,7 @@ An attempt to make an eye-candy syntax for this library was inspired by [discord
 
 If you want to contribute to this project, be sure to follow the [contribution guidelines](./CONTRIBUTING.md) and prep your environment as mentioned before doing so. Thank you for showing your interest!
 
-If you've found a bug, be sure to report it in the [GitHub Issues](https://github.com/hitblast/filthy-rich/issues/) section for of this repository. Reporting actually makes it a lot easier to patch any issues.
+If you've found a bug, be sure to report it in the [GitHub Issues](https://github.com/hitblast/filthy-rich/issues/) section for this repository. Reporting actually makes it a lot easier to patch any issues.
 
 #### Contributors
 
