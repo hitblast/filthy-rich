@@ -50,14 +50,14 @@ Sometimes I leave internal APIs (not re-exported to the outside world) undocumen
 
 Maybe have it in mind when contributing to this library. :3
 
-### Obeying Format
+### Checking the lints
 
-Once you're done adding your features, be sure to run these commands:
+A script is included with the project for you to check the project's linting status (syntax + docs):
 
 ```bash
-cargo clippy --fix --allow-dirty
+chmod +x ./scripts/check-lint.sh
 
-cargo fmt
+./scripts/check-lint.sh
 ```
 
-The style edition for this project (added via `rustfmt.toml`) is set to `2024`.
+For submitting pull requests, a GitHub Actions workflow can also be run for checking the lint status, but it is strongly recommended you check it before you make the PR available.
