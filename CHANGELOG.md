@@ -2,6 +2,12 @@
 
 Active since v0.8.5.
 
+### v1.0.5
+
+Internal changes:
+
+- Code quality improvements.
+
 ### v1.0.4
 
 New features:

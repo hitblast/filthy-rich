@@ -295,7 +295,7 @@ The closure parameter is the count of retries done at the time of its execution.
                                                 break Some(DisconnectReason::ClearActivityError(e.to_string()));
                                             }
                                         },
-                                        IPCCommand::Close { done_tx }=> {
+                                        IPCCommand::Close { done_tx } => {
                                             let _ = socket.close().await;
                                             let _ = done_tx.send(());
                                             break 'outer;
@@ -319,11 +319,16 @@ The closure parameter is the count of retries done at the time of its execution.
                                                         if let Some(data) = json.data {
                                                             let data = serde_json::from_value::<ActivityResponseData>(data);
 
-                                                            if let Ok(d) = data {
-                                                                let f = f.clone();
-                                                                tokio::spawn(async move { f(d)});
-                                                            } else if let Err(e) = data{
-                                                                println!("{e}")
+                                                            match data {
+                                                                Ok(d) => {
+                                                                    let f = f.clone();
+                                                                    tokio::spawn(async move { f(d)});
+                                                                }
+                                                                Err(e) => {
+                                                                    if show_errors {
+                                                                        println!("Activity response deserialization failed: {e}");
+                                                                    }
+                                                                }
                                                             }
                                                         }
                                                     }
