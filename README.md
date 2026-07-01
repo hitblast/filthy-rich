@@ -94,6 +94,9 @@ https://docs.rs/filthy-rich/latest/filthy_rich/
 
 ## TODO
 
+> [!WARNING]
+> The features listed below aren't "guaranteed" in the sense that they'll be launched; they're just ideas that I noted down for convenience. Some of them might be out of scope for this project.
+
 - [x] Full Rich Presence coverage.
 - [ ] Full RPC-over-IPC coverage (as provided by Discord).
 - [ ] New commands for subscribing to events, sending channel/guild commands etc.
