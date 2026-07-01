@@ -104,7 +104,7 @@ https://docs.rs/filthy-rich/latest/filthy_rich/
 
 I did not want to bother myself with manually implementing Rich Presence everytime I start working on an app, so I created this library to make things much simpler; I just wanted a client that does its job in the background.
 
-Also, other implementations felt much more complex to me and also felt like they lacked precise control. This is a more "spread-out" opinion and might hide the truth for some libraries, but yeah, nothing better than throwing your own luck into making yet another IPC RPC client.
+Also, other implementations felt much more complex to me and also felt like they lacked precise control. This is a more "spread-out" opinion and might hide the truth for some libraries, but yeah, nothing better than throwing your own luck into making yet another IPC-RPC client.
 
 #### Inspirations
 
