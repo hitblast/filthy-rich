@@ -2,6 +2,12 @@
 
 Active since v0.8.5.
 
+### v1.0.6
+
+Internal changes:
+
+- Dependencies have been upgraded and some sub-dependencies were removed.
+
 ### v1.0.5
 
 Internal changes:
