@@ -2,6 +2,10 @@
 
 Active since v0.8.5.
 
+### v1.0.7
+
+Dependency upgrade-release. No library changes.
+
 ### v1.0.6
 
 Internal changes:
@@ -65,8 +69,8 @@ New features:
 - `ActivityResponseData` now includes an `ActivityPayload` object (flattened internally) instance for you to directly see which activity details were sent.
 - Completed the `ReadyData` struct with these changes:
   1. New fields in `ReadyData`:
-    - `v` - RPC version (`u8`)
-    - `config` - server configuration (a new `ServerConfigurationData` object)
+  - `v` - RPC version (`u8`)
+  - `config` - server configuration (a new `ServerConfigurationData` object)
   2. The inner `user` field (with type `DiscordUser`) now has the complete specification of struct fields documented in the official Discord RPC documentation.
 
 Changes:
