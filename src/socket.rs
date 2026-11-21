@@ -70,8 +70,8 @@ pub struct Frame {
     pub body: Bytes,
 }
 
-/// Defaults to 16 Mib (just an assumption), this can be changed later
-const MAX_FRAME_SIZE: usize = 16 * 1024 * 1024;
+/// Defaults to 10 Mib (just an assumption), this can be changed later
+const MAX_FRAME_SIZE: usize = 10 * 1024 * 1024;
 
 #[cfg(target_family = "unix")]
 fn add_unix_candidates(candidates: &mut HashSet<String>, base_dir: &str) {
@@ -217,20 +217,21 @@ impl DiscordSock {
         body: T,
     ) -> Result<(), DiscordSockError> {
         let body = body.as_ref();
-        if body.len() > u32::MAX as usize {
+
+        if body.len() > MAX_FRAME_SIZE {
             return Err(DiscordSockError::PayloadTooLarge {
                 size: body.len(),
-                max: u32::MAX as usize,
+                max: MAX_FRAME_SIZE,
             });
         }
-        let mut buf = BytesMut::with_capacity(8 + body.len());
-        let opcode: u32 = opcode.into();
 
-        buf.extend_from_slice(&opcode.to_le_bytes());
-        buf.extend_from_slice(&(body.len() as u32).to_le_bytes());
-        buf.extend_from_slice(body);
+        let mut header = [0u8; 8];
+        header[..4].copy_from_slice(&u32::from(opcode).to_le_bytes());
+        header[4..].copy_from_slice(&(body.len() as u32).to_le_bytes());
 
-        self.write_all(buf.freeze()).await?;
+        self.write_all(&header).await?;
+        self.write_all(body).await?;
+
         Ok(())
     }
 

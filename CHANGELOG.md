@@ -2,6 +2,14 @@
 
 Active since v0.8.5.
 
+### v1.0.8
+
+Internal Changes:
+
+- Decreased `MAX_FRAME_SIZE` from 16 Mib to 10 Mib.
+- Internally, body and header are now separate buffers and do two syscalls per frame to send the header and body separately, to avoid copying the body into a new buffer.
+- `DiscordSock::send_frame` now obeys `MAX_FRAME_SIZE`.
+
 ### v1.0.7
 
 Dependency upgrade-release. No library changes.
