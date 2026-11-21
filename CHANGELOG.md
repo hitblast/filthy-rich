@@ -2,6 +2,12 @@
 
 Active since v0.8.5.
 
+### v1.0.9
+
+Changes:
+
+- Removed the crate-only global macros from the public API.
+
 ### v1.0.8
 
 Internal Changes:

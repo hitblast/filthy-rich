@@ -4,9 +4,8 @@
 use serde::{Deserialize, Serialize, ser::SerializeStruct};
 
 use crate::{
-    ds,
     errors::InnerParsingError,
-    str,
+    macros::{ds, str},
     types::{ActivitySpec, ActivityType, StatusDisplayType},
     utils::get_current_timestamp,
 };

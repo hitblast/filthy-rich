@@ -2,7 +2,7 @@ use std::{collections::HashMap, time::Duration};
 
 use crate::{
     errors::ActivitySpecBuildError,
-    nf,
+    macros::nf,
     types::{
         ActivitySpec, ActivityType, StatusDisplayType,
         payloads::{AssetsPayload, ButtonPayload},

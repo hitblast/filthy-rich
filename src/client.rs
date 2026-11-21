@@ -2,7 +2,7 @@ use tokio::sync::{mpsc::Sender, oneshot};
 
 use crate::{
     errors::PresenceClientError,
-    str,
+    macros::str,
     types::{ActivitySpec, IPCCommand},
 };
 

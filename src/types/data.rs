@@ -4,7 +4,10 @@
 use serde::Deserialize;
 use serde_json::Value;
 
-use crate::{ds, str, types::payloads::ActivityPayload};
+use crate::{
+    macros::{ds, str},
+    types::payloads::ActivityPayload,
+};
 
 /// Data received in response from the server after sending a SET_ACTIVITY command.
 ///

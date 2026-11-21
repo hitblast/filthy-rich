@@ -3,7 +3,6 @@
 
 /// Generates a function `$name` which takes a `$param` and sets the
 /// `$name` field of a struct to be a `None`-filtered `String`.
-#[macro_export]
 macro_rules! nf {
     ($name:ident, $doc:expr, $param:ident) => {
         #[must_use]
@@ -15,10 +14,10 @@ macro_rules! nf {
         }
     };
 }
+pub(crate) use nf;
 
 /// Generates a function which returns a borrowed `&str` for a given `String` field
 /// named `$name` in a class.
-#[macro_export]
 macro_rules! str {
     ($name:ident, $doc:expr) => {
         #[must_use]
@@ -28,10 +27,10 @@ macro_rules! str {
         }
     };
 }
+pub(crate) use str;
 
 /// Generates a function `$name` which returns an `Option<&str>` by
 /// dereferencing the `$name` field of a struct.
-#[macro_export]
 macro_rules! ds {
     ($name:ident, $doc:expr) => {
         #[must_use]
@@ -41,3 +40,4 @@ macro_rules! ds {
         }
     };
 }
+pub(crate) use ds;
