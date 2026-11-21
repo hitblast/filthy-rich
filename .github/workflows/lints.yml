@@ -35,4 +35,6 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - uses: mozilla-actions/sccache-action@v0.0.9
       - run: sccache --show-stats || true
-      - run: ./scripts/check-lint.sh
+
+      - uses: extractions/setup-just@v3
+      - run: just testall

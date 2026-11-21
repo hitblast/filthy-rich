@@ -46,18 +46,20 @@ In short:
 
 ### A Note on Undocumented Items
 
-Sometimes I leave internal APIs (not re-exported to the outside world) undocumented only for the sake of spotting them easily. In that case, I often times write the code in such a way that it doesn't necessarily *need* any documentation to explain itsef.
+Sometimes I leave internal APIs (not re-exported to the outside world) undocumented only for the sake of spotting them easily. In that case, I often times write the code in such a way that it doesn't necessarily _need_ any documentation to explain itsef.
 
 Maybe have it in mind when contributing to this library. :3
 
-### Checking the lints
+### Testing
 
-A script is included with the project for you to check the project's linting status (syntax + docs):
+To run the test suite, use the `testall` target via [just](https://github.com/casey/just):
 
 ```bash
-chmod +x ./scripts/check-lint.sh
+# Run all tests
+just testall
 
-./scripts/check-lint.sh
+# Fixes all
+just fixall
 ```
 
 For submitting pull requests, a GitHub Actions workflow can also be run for checking the lint status, but it is strongly recommended you check it before you make the PR available.
